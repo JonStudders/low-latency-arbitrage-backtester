@@ -5,3 +5,5 @@ statsmodels
 numba
 jupyter
 yfinance
+pytest
+pytz

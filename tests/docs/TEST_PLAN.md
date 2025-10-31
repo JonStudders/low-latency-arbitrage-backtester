@@ -14,11 +14,10 @@ and produces standardized, timezone-aware datasets for later analytics.
 | Test Name | Behavior Verified | Rationale |
 |------------|-------------------|------------|
 | `test_valid_tickers_returns_dataframe` | Returns non-empty DataFrame with correct columns for valid tickers | Core functionality: must fetch and align data correctly |
-| `test_qqq_returns_empty_dataframe` | Returns empty DataFrame when 'QQQ' used | Simulates empty dataset for downstream edge-case testing |
 | `test_invalid_ticker_returns_empty_dataframe` | Returns empty DataFrame for invalid or delisted tickers | Ensures graceful failure instead of crashing |
 | `test_index_is_timezone_aware` | Output index has UTC timezone | Guarantees consistent time alignment across datasets |
 | `test_default_date_range_is_recent` | Uses dynamic UTC window (~5 years) when no dates are provided | Confirms default behavior is practical and reproducible |
-
+| `test_same_tickers_returns_single_series_data` | Handles identical ticker inputs correctly (no crash or duplication) | Prevents logical errors when user accidentally provides same ticker twice |
 ---
 
 ### Notes

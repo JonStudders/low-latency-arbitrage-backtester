@@ -18,6 +18,7 @@ and produces standardized, timezone-aware datasets for later analytics.
 | `test_index_is_timezone_aware` | Output index has UTC timezone | Guarantees consistent time alignment across datasets |
 | `test_default_date_range_is_recent` | Uses dynamic UTC window (~5 years) when no dates are provided | Confirms default behavior is practical and reproducible |
 | `test_same_tickers_returns_single_series_data` | Handles identical ticker inputs correctly (no crash or duplication) | Prevents logical errors when user accidentally provides same ticker twice |
+| `test_safe_download_invalid_ticker_returns_empty` | Ensures that `_safe_download()` returns an empty Series when provided with an invalid or unavailable ticker symbol | Verifies robustness and fault tolerance at the lowest data-fetching level, ensuring consistent behavior even when API calls fail |
 ---
 
 ### Notes

@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 from datetime import datetime
 import pytz
-from src.data_utils import download_data
+from src.data_utils import download_data, _safe_download
 
 ## Tests
 
@@ -23,6 +23,20 @@ def test_valid_tickers_returns_dataframe():
 	# Validate content
 	assert not df.empty, "DataFrame should not be empty."
 	assert list(df.columns) == ["SPY", "QQQ"], "Expected headers to match tickers."
+
+def test_safe_download_invalid_ticker_returns_empty():
+
+	# Set date range for data download.
+	end_date = datetime.now(pytz.UTC)
+	start_date = end_date.replace(yea=end_date.year - 5)
+	start_naive = start_date.astimezone(pytz.UTC).replace(tzinfo=None)
+	end_naive = end_date.astimezone(pytz.UTC).replace(tzinfo=None)
+
+	# Download invalid ticker.
+	series = _safe_download("ABCDE", start_naive, end_naive)
+	
+	# Invalid ticker should return empty data series.
+	assert series.empty, "Expected empty Data Series for invalid ticker."
 
 def test_invalid_ticker_returns_empty_dataframe():
 	"""

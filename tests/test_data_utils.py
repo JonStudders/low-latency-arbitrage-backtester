@@ -28,7 +28,7 @@ def test_safe_download_invalid_ticker_returns_empty():
 
 	# Set date range for data download.
 	end_date = datetime.now(pytz.UTC)
-	start_date = end_date.replace(yea=end_date.year - 5)
+	start_date = end_date.replace(year=end_date.year - 5)
 	start_naive = start_date.astimezone(pytz.UTC).replace(tzinfo=None)
 	end_naive = end_date.astimezone(pytz.UTC).replace(tzinfo=None)
 

@@ -3,9 +3,28 @@
 ## Imports
 import yfinance as yf
 import pandas as pd
+import pytz
 from datetime import datetime
 
 ## Functions
+def _safe_download(ticker: str, start_naive, end_naive) -> pd.Series:
+	"""
+	Internal function to download close prices for a single ticker.
+
+	Args:
+		ticker : str
+			The ticker symbol of the asset to download prices for.
+		start_naive
+			Start naive datetime for the data date range
+		end_naive
+			End naive datetime for the data date range.
+
+	Returns:
+		pd.Series
+			A pandas Series of adjusted close prices indexed by datetime.
+            Returns an empty Series if data retrieval fails or no data exists.
+	"""
+
 def download_data(
 	ticker_a: str, 
 	ticker_b: str, 

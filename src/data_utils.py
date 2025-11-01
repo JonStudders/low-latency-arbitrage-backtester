@@ -24,6 +24,23 @@ def _safe_download(ticker: str, start_naive, end_naive) -> pd.Series:
 			A pandas Series of adjusted close prices indexed by datetime.
             Returns an empty Series if data retrieval fails or no data exists.
 	"""
+	try:
+		data = yf.download(
+			ticker,
+			start=start_naive,
+			end=end_naive,
+			progress=False, # Keep logs clean.
+			auto_adjust=True
+		)["Close"] # Close price is automatically adjusted for splits and dividends.
+
+		if data.empty:
+			print (f"No data returned for ticker: '{ticker}'.")
+			return pd.Series(dtype=float)
+		
+		return data
+	except Exception as e:
+		print (f"Failed to download data for ticker: '{ticker}': {e}")
+		return pd.Series(dtype=float)
 
 def download_data(
 	ticker_a: str, 
@@ -67,5 +84,33 @@ def download_data(
 		- This function uses Yahoo Finance API through the yFinance library.
 		- This function has no effort to retrieve missing entries.
 	"""
+	
+	# Define date range if not specified.
+	now = datetime.now(pytz.UTC)
+	if end is None:
+		end = now
+	if start is None:
+		start = now.replace(year=now.year - 5)
 
-	return pd.DataFrame()
+	# Convert to naive UTC dateimes for yFinance.
+	start_naive = start.astimezone(pytz.UTC).replace(tzinfo=None)
+	end_naive = end.astimezone(pytz.UTC).replace(tzinfo=None)
+
+	# Download data
+	a_data = _safe_download(ticker_a, start_naive, end_naive)
+	b_data = _safe_download(ticker_b, start_naive, end_naive)
+
+	if a_data.empty or b_data.empty:
+		return pd.DataFrame()
+	
+	df = pd.concat([a_data, b_data], axis=1)
+	df.columns = [ticker_a, ticker_b]
+	df = df.dropna()
+	df.index = pd.to_datetime(df.index).tz_localize(pytz.UTC)
+
+	return df
+
+if __name__ == "__main__":
+	df = download_data("SPY", "QQQ")
+	df.to_csv("data/SPY_QQQ.csv")
+	print("Data saved to data/SPY_QQ.csv")

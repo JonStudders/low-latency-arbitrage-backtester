@@ -221,4 +221,4 @@ SOFTWARE.
 
 **Jon Studders**
 - LinkedIn: [Jon Studders](https://www.linkedin.com/in/jon-studders-1236841a4/)
-- GitHub: [@JonStudders](https://github.com/JonStudders/LASE)
+- GitHub: [@JonStudders](https://github.com/JonStudders/low-latency-arbitrage-backtester)

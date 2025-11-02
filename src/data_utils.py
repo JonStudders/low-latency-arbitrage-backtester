@@ -101,6 +101,7 @@ def download_data(
 	b_data = _safe_download(ticker_b, start_naive, end_naive)
 
 	if a_data.empty or b_data.empty:
+		print ("One or both tickers returned no data. Returning empty DataFrame.")
 		return pd.DataFrame()
 	
 	df = pd.concat([a_data, b_data], axis=1)
@@ -109,8 +110,3 @@ def download_data(
 	df.index = pd.to_datetime(df.index).tz_localize(pytz.UTC)
 
 	return df
-
-if __name__ == "__main__":
-	df = download_data("SPY", "QQQ")
-	df.to_csv("data/SPY_QQQ.csv")
-	print("Data saved to data/SPY_QQ.csv")

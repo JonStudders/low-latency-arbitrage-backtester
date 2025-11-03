@@ -192,6 +192,7 @@ The `data/` directory contains both raw and processed market data:
 - The system has no automatic retry mechanism for failed API calls
 - All timestamps are standardized to UTC for consistency
 - Missing data points are dropped during alignment (no forward/backward fill)
+- Initially 'Raw Spread' was used in the data processing, but I opt'd for Hedge Ratio due to the Scalability and industry standard.
 
 ## License
 

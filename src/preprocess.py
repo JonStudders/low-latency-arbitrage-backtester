@@ -7,9 +7,11 @@ import numpy as np
 ## Functions
 def prepare_spread(df: pd.DataFrame, lookback: int = 60) -> pd.DataFrame:
   """
-  Compute spread, rolling mean, std, and z-score between two assets.
+  Compute hedge-ratio-adjusted spread, rolling mean, std, and z-score between two assets.
 
-  prepare_spread computes the price difference (spread) between two assets,
+  prepare_spread estimates a rolling hedge ratio (β) between the two assets to
+  normalise scale differences and better capture the true relative movement.
+  It then computes the price difference (spread) between two assets,
   along with the rolling average and a standardised "z-score" that indicates
   how unusual the current spread is compared to its recent history.
 
@@ -21,7 +23,7 @@ def prepare_spread(df: pd.DataFrame, lookback: int = 60) -> pd.DataFrame:
 
   Returns:
     pd.DataFrame
-      The original dataframe with four new columns: spread, spread_mean, spread_std, and zscore.
+      The original dataframe with four new columns: beta, spread, spread_mean, spread_std, and zscore.
   """
   # Check we have exactly two columns.
   if df.shape[1] != 2:
@@ -32,8 +34,16 @@ def prepare_spread(df: pd.DataFrame, lookback: int = 60) -> pd.DataFrame:
   # Make a copy so we don't modify the original.
   df = df.copy()
 
-  # Calculate spreaad
-  df["spread"] = df[a] - df[b]
+  # Rolling hedge ratio
+  cov = df[a].rolling(window=lookback).cov(df[b])
+  var = df[b].rolling(window=lookback).var()
+  df["beta"] = cov / var
+
+  # Backfill NaNs.
+  df["beta"] = df["beta"].bfill()
+
+  # Calculate spread
+  df["spread"] = df[a] - df["beta"] * df[b]
 
   # Calculate rolling average (mean).
   df["spread_mean"] = df["spread"].rolling(window=lookback).mean()

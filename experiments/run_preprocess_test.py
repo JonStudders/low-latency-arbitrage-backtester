@@ -44,63 +44,63 @@ def main(show_graphs: bool = True):
 
   # Loop through each pair.
   for ticker_a, ticker_b in pairs:
-      print(f"Downloading data for {ticker_a} and {ticker_b}.")
+    print(f"Downloading data for {ticker_a} and {ticker_b}.")
 
-      # Download data using data_utils.download_data
-      df = download_data(ticker_a, ticker_b)
-      if df.empty:
-        print(f"No data returned for {ticker_a} and {ticker_b}.")
-        continue # Skip row
+    # Download data using data_utils.download_data
+    df = download_data(ticker_a, ticker_b)
+    if df.empty:
+      print(f"No data returned for {ticker_a} and {ticker_b}.")
+      continue # Skip row
 
-      print(f"Downloaded {len(df)} rows of data.")
+    print(f"Downloaded {len(df)} rows of data.")
 
-      # Run preparation/computation functions on data downloaded.
-      print("Running preprocess functionality.")
-      processed = prepare_spread(df, lookback=60)
-      if processed.empty:
-          print(f"Preprocessing returned no data for {ticker_a} and {ticker_b}. Skipping.")
-          continue # Skip row
+    # Run preparation/computation functions on data downloaded.
+    print("Running preprocess functionality.")
+    processed = prepare_spread(df, lookback=60)
+    if processed.empty:
+      print(f"Preprocessing returned no data for {ticker_a} and {ticker_b}. Skipping.")
+      continue # Skip row
 
-      print(f"Processed {len(processed)} rows after rolling-window warmup.")
-      print(processed.head(3))
+    print(f"Processed {len(processed)} rows after rolling-window warmup.")
+    print(processed.head(3))
 
-      # Print z-score stats.
-      print("Z-score summary:")
-      print(processed["zscore"].describe())
+    # Print z-score stats.
+    print("Z-score summary:")
+    print(processed["zscore"].describe())
 
-      # Save to /data/{ticker_a}_{ticker_b}_processed.csv
-      filename = f"{ticker_a.replace('=','')}_{ticker_b.replace('=','')}_processed.csv"
-      save_path = Path("data") / filename
-      processed.to_csv(save_path, index=True)
-      print(f"Saved processed data to {save_path.resolve()}")
+    # Save to /data/{ticker_a}_{ticker_b}_processed.csv
+    filename = f"{ticker_a.replace('=','')}_{ticker_b.replace('=','')}_processed.csv"
+    save_path = Path("data") / filename
+    processed.to_csv(save_path, index=True)
+    print(f"Saved processed data to {save_path.resolve()}")
 
-      # Plot z-score using pyplot if enabled.
-      if show_graphs:
-        # Create a new figure for this asset pair and set window title.
-        plt.figure(figsize=(10, 6))
-        plt.gcf().canvas.manager.set_window_title(f"{ticker_a}-{ticker_b} Z-Score")  # Custom window name
+    # Plot z-score using pyplot if enabled.
+    if show_graphs:
+      # Create a new figure for this asset pair and set window title.
+      plt.figure(figsize=(10, 6))
+      plt.gcf().canvas.manager.set_window_title(f"{ticker_a}-{ticker_b} Z-Score")  # Custom window name
 
-        # Plot the rolling z-score to visualise  behaviour.
-        plt.plot(processed.index, processed["zscore"], label="Z-Score", color="steelblue", linewidth=1.5)
+      # Plot the rolling z-score to visualise  behaviour.
+      plt.plot(processed.index, processed["zscore"], label="Z-Score", color="steelblue", linewidth=1.5)
 
-        # Add horizontal reference lines. 0 line for the mean, 
-        # (+-) 2 as typical thresholds for entry/exiting.
-        plt.axhline(0, color="black", linewidth=0.8)
-        plt.axhline(2, color="tomato", linestyle="--", linewidth=0.8)
-        plt.axhline(-2, color="tomato", linestyle="--", linewidth=0.8)
+      # Add horizontal reference lines. 0 line for the mean, 
+      # (+-) 2 as typical thresholds for entry/exiting.
+      plt.axhline(0, color="black", linewidth=0.8)
+      plt.axhline(2, color="tomato", linestyle="--", linewidth=0.8)
+      plt.axhline(-2, color="tomato", linestyle="--", linewidth=0.8)
 
-        # Title and labels for context.
-        plt.title(f"{ticker_a} vs {ticker_b}  |  Spread Z-Score (lookback=60)", fontsize=12)
-        plt.xlabel("Date")
-        plt.ylabel("Z-Score")
+      # Title and labels for context.
+      plt.title(f"{ticker_a} vs {ticker_b}  |  Spread Z-Score (lookback=60)", fontsize=12)
+      plt.xlabel("Date")
+      plt.ylabel("Z-Score")
 
-        # Add legend and a faint grid structure.
-        plt.legend(loc="upper right")
-        plt.grid(True, linestyle="--", alpha=0.3)
-        plt.tight_layout()
+      # Add legend and a faint grid structure.
+      plt.legend(loc="upper right")
+      plt.grid(True, linestyle="--", alpha=0.3)
+      plt.tight_layout()
 
-        # Display the plot interactively (skipped if SHOW_GRAPHS=False).
-        plt.show()
+      # Display the plot interactively (skipped if SHOW_GRAPHS=False).
+      plt.show()
 
   # Confirm all pairs have been processed.
   print("All preprocessing complete.")

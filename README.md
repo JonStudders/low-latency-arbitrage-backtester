@@ -186,6 +186,21 @@ The `data/` directory contains both raw and processed market data:
 - **Raw data** (`*.csv`): Historical price data downloaded from Yahoo Finance
 - **Processed data** (`*_processed.csv`): Data enriched with spread, rolling statistics, and z-scores
 
+## Future Enhancements 
+### Adaptive Preprocessing
+
+#### Dynamic Hedge Ratio Estimation (Kalman Filter)
+- Replace the fixed rolling-OLS hedge ratio with a Kalman filter to estimate a time-varying βₜ.
+- This improves responsiveness to changing market regimes while reducing noise and lag in the spread definition.
+
+#### Adaptive Lookback Calibration
+
+Instead of a fixed 60-day window, calibrate the z-score lookback (N) using the mean-reversion half-life of each pair:
+
+- N = 2-4 * (t)
+
+This makes the z-score normalization pair-specific and statistically justified.
+
 ## Notes
 
 - This project uses Yahoo Finance API through the `yfinance` library

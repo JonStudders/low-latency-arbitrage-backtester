@@ -1,29 +1,31 @@
-# experiments/run_preprocess_test.py
+# experiments/run_signals_test.py
 
 ## Imports
 import sys
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-# Allow imports from /src when running this script directly
+# Allow imports from /src when running directly
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from data_utils import download_data
 from preprocess import prepare_spread
+from signals import generate_trade_signals
+
 
 ## Functions
 def main(show_graphs: bool = True):
   """
-  Manual batch test for the data preprocessing pipeline.
+  Manual batch test for the signal generation utility.
 
   This script downloads multiple asset pairs from Yahoo Finance,
-  runs the spread and z-score preprocessing step for each,
-  prints summary statistics, and saves each processed dataset
-  to a separate CSV file under /data.
+  runs the spread and z-score preprocessing step, then applies
+  the signal generation logic to create trading signals based on
+  z-score thresholds. The output is saved as a CSV file under /data.
 
   Args:
     show_graphs : bool, default=True
-      Define whether to show z-score graph for each asset pair.
+      Define whether to show z-score and signal graph for each asset pair.
 
   Pairs tested:
     - BZ=F vs CL=F   (Brent vs WTI crude)
@@ -44,7 +46,7 @@ def main(show_graphs: bool = True):
 
   # Loop through each pair.
   for ticker_a, ticker_b in pairs:
-    print(f"Downloading data for {ticker_a} and {ticker_b}.")
+    print(f"Processing {ticker_a} and {ticker_b}.")
 
     # Download data using data_utils.download_data
     df = download_data(ticker_a, ticker_b)
@@ -62,37 +64,37 @@ def main(show_graphs: bool = True):
       continue # Skip row
 
     print(f"Processed {len(processed)} rows after rolling-window warmup.")
-    print(processed.head(3))
 
-    # Print z-score stats.
-    print("Z-score summary:")
-    print(processed["zscore"].describe())
+    # Generate trading signals based on z-score thresholds.
+    print("Generating trading signals.")
+    df_signals = generate_trade_signals(processed, entry_z=2.0, exit_z=0.5)
 
-    # Save to /data/{ticker_a}_{ticker_b}_processed.csv
-    filename = f"{ticker_a.replace('=','')}_{ticker_b.replace('=','')}_processed.csv"
+    # Save to /data/{ticker_a}_{ticker_b}_signals.csv
+    filename = f"{ticker_a.replace('=','')}_{ticker_b.replace('=','')}_signals.csv"
     save_path = Path("data") / filename
-    processed.to_csv(save_path, index=True)
-    print(f"Saved processed data to {save_path.resolve()}")
+    df_signals.to_csv(save_path, index=True)
+    print(f"Saved signal data to {save_path.resolve()}")
 
-    # Plot z-score using pyplot if enabled.
+    # Plot z-score and signals using pyplot if enabled.
     if show_graphs:
       # Create a new figure for this asset pair and set window title.
       plt.figure(figsize=(10, 6))
-      plt.gcf().canvas.manager.set_window_title(f"{ticker_a}-{ticker_b} Z-Score")  # Custom window name
+      plt.gcf().canvas.manager.set_window_title(f"{ticker_a}-{ticker_b} Signals")
 
-      # Plot the rolling z-score to visualise  behaviour.
-      plt.plot(processed.index, processed["zscore"], label="Z-Score", color="steelblue", linewidth=1.5)
+      # Plot the z-score and signal lines.
+      plt.plot(df_signals.index, df_signals["zscore"], label="Z-Score", color="steelblue", linewidth=1.5)
+      plt.plot(df_signals.index, df_signals["signal"], label="Signal", color="orange", linewidth=1.5)
 
-      # Add horizontal reference lines. 0 line for the mean, 
+      # Add horizontal reference lines. 0 line for the mean,
       # (+-) 2 as typical thresholds for entry/exiting.
       plt.axhline(0, color="black", linewidth=0.8)
       plt.axhline(2, color="tomato", linestyle="--", linewidth=0.8)
       plt.axhline(-2, color="tomato", linestyle="--", linewidth=0.8)
 
       # Title and labels for context.
-      plt.title(f"{ticker_a} vs {ticker_b}  |  Spread Z-Score (lookback=60)", fontsize=12)
+      plt.title(f"{ticker_a} vs {ticker_b}  |  Z-Score & Trade Signals", fontsize=12)
       plt.xlabel("Date")
-      plt.ylabel("Z-Score")
+      plt.ylabel("Value")
 
       # Add legend and a faint grid structure.
       plt.legend(loc="upper right")
@@ -103,7 +105,7 @@ def main(show_graphs: bool = True):
       plt.show()
 
   # Confirm all pairs have been processed.
-  print("All preprocessing complete.")
+  print("All signal generation complete.")
 
 
 if __name__ == "__main__":

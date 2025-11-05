@@ -18,7 +18,7 @@ The technical focus remains on three key areas:
 
 ### Python
 - `NumPy`, `pandas`, `statsmodels`, `matplotlib`, `yfinance`, `tqdm`
-- Data ingestion, cointegration testing, backtesting, visualization
+- Data ingestion, cointegration testing, backtesting, visualisation
 
 ### C++:
 - Lib 1
@@ -28,10 +28,10 @@ The technical focus remains on three key areas:
 
 - **Robust Data Download**: Automated market data retrieval from Yahoo Finance with timezone-aware date handling
 - **Spread Analysis**: Computes price spreads between asset pairs with configurable rolling windows
-- **Z-Score Calculation**: Statistical normalization for mean-reversion signal generation
+- **Z-Score Calculation**: Statistical normalisation for mean-reversion signal generation
 - **Error Handling**: Graceful handling of invalid tickers, missing data, and API failures
 - **Comprehensive Testing**: Full test coverage with pytest for data utilities and preprocessing functions
-- **Experimentation Tools**: Scripts for batch processing and visualization of multiple asset pairs
+- **Experimentation Tools**: Scripts for batch processing and visualisation of multiple asset pairs
 
 ## Installation
 
@@ -134,7 +134,7 @@ This script downloads market data for four asset pairs:
 - SPY vs QQQ (index ETFs)
 - V vs MA (payment processors)
 
-#### Process and Visualize Spreads
+#### Process and Visualise Spreads
 
 ```bash
 python experiments/run_preprocess_test.py
@@ -143,7 +143,7 @@ python experiments/run_preprocess_test.py
 This script:
 - Downloads data for multiple asset pairs
 - Computes spreads and z-scores
-- Generates visualization plots
+- Generates visualisation plots
 - Saves processed data to CSV files
 
 ## Testing
@@ -173,10 +173,10 @@ pytest --cov=src --cov-report=html
 The project maintains comprehensive test coverage for:
 - Data download functionality with various ticker inputs
 - Error handling for invalid tickers and missing data
-- Timezone standardization
+- Timezone standardisation
 - Spread calculation accuracy
 - Z-score computation validation
-- Rolling window behavior
+- Rolling window behaviour
 
 See `tests/docs/TEST_PLAN.md` and `tests/docs/COVERAGE_MAP.md` for detailed testing documentation.
 
@@ -199,13 +199,13 @@ Instead of a fixed 60-day window, calibrate the z-score lookback (N) using the m
 
 - N = 2-4 * (t)
 
-This makes the z-score normalization pair-specific and statistically justified.
+This makes the z-score normalisation pair-specific and statistically justified.
 
 ## Notes
 
 - This project uses Yahoo Finance API through the `yfinance` library
 - The system has no automatic retry mechanism for failed API calls
-- All timestamps are standardized to UTC for consistency
+- All timestamps are standardised to UTC for consistency
 - Missing data points are dropped during alignment (no forward/backward fill)
 - Initially 'Raw Spread' was used in the data processing, but I opt'd for Hedge Ratio due to the Scalability and industry standard.
 

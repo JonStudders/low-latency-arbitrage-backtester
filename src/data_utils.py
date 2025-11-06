@@ -29,17 +29,17 @@ def _safe_download(ticker: str, start_naive, end_naive) -> pd.Series:
 			ticker,
 			start=start_naive,
 			end=end_naive,
-			progress=False, # Keep logs clean.
+			progress=False,  # Keep logs clean.
 			auto_adjust=True
-		)["Close"] # Close price is automatically adjusted for splits and dividends.
+		)["Close"]  # Close price is automatically adjusted for splits and dividends.
 
 		if data.empty:
-			print (f"No data returned for ticker: '{ticker}'.")
+			print(f"No data returned for ticker: '{ticker}'.")
 			return pd.Series(dtype=float)
 		
 		return data
 	except Exception as e:
-		print (f"Failed to download data for ticker: '{ticker}': {e}")
+		print(f"Failed to download data for ticker: '{ticker}': {e}")
 		return pd.Series(dtype=float)
 
 def download_data(
@@ -67,17 +67,17 @@ def download_data(
 			End datetime with timezone. Defaults to current UTC time.
 
 	Returns:
-		pd.Dataframe
+		pd.DataFrame
 			A table containing two columns, ticker_a and ticker_b, with
 			asset prices alongside corresponding dates as an index.
 	
 	Example:
-		With defined start/end date.
+		With defined start/end dates:
 		>>> start = datetime(2020, 1, 1, tzinfo=pytz.UTC)
-		>>> end = datetime.now(2025, 1, 1, tzinfo=pytz.UTC)
-		>>> dataframe = download_data("SPY", "QQQ", start_date, end_date)
+		>>> end = datetime(2025, 1, 1, tzinfo=pytz.UTC)
+		>>> dataframe = download_data("SPY", "QQQ", start, end)
 
-		With default start/end date.
+		With default start/end dates:
 		>>> dataframe = download_data("SPY", "QQQ")
 	
 	Notes:
@@ -92,7 +92,7 @@ def download_data(
 	if start is None:
 		start = now.replace(year=now.year - 5)
 
-	# Convert to naive UTC dateimes for yFinance.
+	# Convert to naive UTC datetimes for yFinance
 	start_naive = start.astimezone(pytz.UTC).replace(tzinfo=None)
 	end_naive = end.astimezone(pytz.UTC).replace(tzinfo=None)
 
@@ -101,7 +101,7 @@ def download_data(
 	b_data = _safe_download(ticker_b, start_naive, end_naive)
 
 	if a_data.empty or b_data.empty:
-		print ("One or both tickers returned no data. Returning empty DataFrame.")
+		print("One or both tickers returned no data. Returning empty DataFrame.")
 		return pd.DataFrame()
 	
 	df = pd.concat([a_data, b_data], axis=1)

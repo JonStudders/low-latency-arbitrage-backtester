@@ -23,41 +23,56 @@ def prepare_spread(df: pd.DataFrame, lookback: int = 60) -> pd.DataFrame:
 
   Returns:
     pd.DataFrame
-      The original dataframe with four new columns: beta, spread, spread_mean, spread_std, and zscore.
+      The original DataFrame with five new columns: beta, spread, spread_mean, spread_std, and zscore.
+
+  Example:
+    >>> df = pd.DataFrame({
+    ...     'SPY': [100, 102, 104, 106, 108],
+    ...     'QQQ': [200, 204, 208, 212, 216]
+    ... })
+    >>> result = prepare_spread(df, lookback=3)
+    >>> 'zscore' in result.columns
+    True
   """
-  # Check we have exactly two columns.
+  # Validate that we have exactly two columns for spread calculation
   if df.shape[1] != 2:
     raise ValueError("Expected exactly two columns for spread calculation.")
 
+  # Handle empty DataFrame gracefully
+  if df.empty:
+    return df
+
   a, b = df.columns
 
-  # Make a copy so we don't modify the original.
+  # Make a copy so we don't modify the original data
   df = df.copy()
 
-  # Rolling hedge ratio
+  # Calculate rolling hedge ratio (beta) to normalise scale differences
+  # Beta tells us how much Asset A moves relative to Asset B
   cov = df[a].rolling(window=lookback).cov(df[b])
   var = df[b].rolling(window=lookback).var()
   df["beta"] = cov / var
 
-  # Backfill NaNs.
+  # Fill initial NaN values in beta by using the first valid calculation
+  # This ensures we have a hedge ratio for all rows after the warmup period
   df["beta"] = df["beta"].bfill()
 
-  # Calculate spread
+  # Calculate the adjusted spread using the hedge ratio
+  # This removes the scale difference between the two assets
   df["spread"] = df[a] - df["beta"] * df[b]
 
-  # Calculate rolling average (mean).
+  # Calculate rolling statistics for the spread
   df["spread_mean"] = df["spread"].rolling(window=lookback).mean()
-
-  # Calculate rolling std.
   df["spread_std"] = df["spread"].rolling(window=lookback).std()
 
-  # Calculate z-score, replace zero std with NaN to avoid division by zero.
+  # Normalise the spread into a z-score
+  # Replace zero std with NaN to avoid division by zero
   df["zscore"] = (df["spread"] - df["spread_mean"]) / df["spread_std"].replace(0, np.nan)
   
-  # If spread doesn't change, set z-score to 0.
+  # If spread doesn't change (std=0), set z-score to 0 rather than NaN
   df["zscore"] = df["zscore"].fillna(0)
 
-  # Drop the first few rows where rolling stats could not be calculated. (Warmup period)
+  # Remove warmup period where rolling statistics couldn't be calculated
   df = df.dropna(subset=["spread_mean", "spread_std"])
 
   return df

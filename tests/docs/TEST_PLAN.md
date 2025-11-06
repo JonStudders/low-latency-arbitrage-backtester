@@ -39,6 +39,12 @@ To validate the **spread preparation and statistical normalisation** process use
 | `test_prepare_spread_raises_for_invalid_columns` | Raises a ValueError if input DataFrame has more or fewer than two columns | Ensures defensive error handling for malformed data |
 | `test_prepare_spread_handles_missing_data_gracefully` | Ensures missing data are handled cleanly and NaNs are dropped after rolling ops | Confirms data hygiene before signal generation |
 | `test_prepare_spread_respects_lookback_window` | Verifies the output length matches expected rolling-window truncation | Confirms correct rolling window behaviour |
+| `test_beta_calculation_accuracy` | Verifies hedge ratio (beta) is calculated correctly for known asset relationships | Validates core mathematical correctness of beta estimation |
+| `test_spread_calculation_with_known_beta` | Confirms spread = A - beta * B formula is implemented correctly | Ensures spread calculation matches theoretical definition |
+| `test_zscore_has_zero_mean_unit_variance` | Validates z-score normalisation produces approximately zero mean (rolling z-scores have time-varying variance, not unit variance) | Confirms statistical properties of rolling z-score transformation |
+| `test_constant_spread_produces_zero_zscore` | Ensures truly constant prices produce zero z-scores when std=0 | Handles edge case of zero variance gracefully without NaN errors |
+| `test_beta_backfill_handles_initial_nans` | Verifies beta is backfilled for initial rows where rolling window is incomplete | Ensures no NaN values in beta column after processing |
+| `test_spread_column_exists_and_is_numeric` | Confirms spread column is created with numeric dtype and no missing values | Basic structural validation of spread output |
 
 ---
 
@@ -65,8 +71,39 @@ Verify correct entry, exit, and persistence behaviour under all common scenarios
 
 ---
 
+## Module: src/backtest.py
+Component under test: `run_backtest()`
+
+### Purpose
+To validate the **backtesting engine** that simulates historical trading performance.
+Verify correct PnL calculation, look-ahead bias prevention, and economic logic of long/short positions.
+
+---
+
+### Tests and Their Intent
+
+| Test Name | Behaviour Verified | Rationale |
+|------------|------------------|------------|
+| `test_run_backtest_returns_expected_columns` | Returns DataFrame with required columns (`spread_ret`, `pnl`, `cum_pnl`) | Confirms structural integrity of backtest output |
+| `test_run_backtest_computes_valid_pnl` | Cumulative PnL equals sum of incremental PnL | Validates mathematical consistency of PnL accumulation |
+| `test_run_backtest_raises_for_missing_columns` | Raises ValueError when required input columns are missing | Ensures defensive validation of input data |
+| `test_flat_signal_results_in_zero_pnl` | Flat (zero) signals produce no profit or loss | Confirms no PnL is generated without active positions |
+| `test_signal_shift_prevents_lookahead_bias` | Signals are shifted to prevent look-ahead bias | Critical validation that prevents unrealistic backtest results |
+| `test_long_position_profits_from_spread_increase` | Long positions (+1) make money when spread increases | Validates core economic logic of long positions |
+| `test_short_position_profits_from_spread_decrease` | Short positions (-1) make money when spread decreases | Validates core economic logic of short positions |
+| `test_long_position_loses_from_spread_decrease` | Long positions lose money when spread decreases | Confirms correct sign of losses for long positions |
+| `test_position_flip_from_long_to_short` | PnL calculated correctly during position transitions | Ensures signal lag is handled properly during flips |
+| `test_position_entry_from_flat` | PnL is zero during entry period (using prior flat signal) | Validates signal shift during position entry |
+| `test_spread_return_calculation` | Spread returns calculated as percentage change | Confirms correct return calculation methodology |
+| `test_pnl_calculation_with_known_values` | Hand-calculated PnL values match implementation | Validates numerical precision with known test cases |
+| `test_empty_dataframe_handling` | Empty DataFrame handled gracefully | Edge case validation for empty inputs |
+| `test_single_row_dataframe` | Single row produces zero PnL (no prior signal) | Edge case validation for minimal input |
+
+---
+
 ### Notes
 - All tests are written in `pytest` and follow AAA (Arrange–Act–Assert) structure.
 - Data sources are mocked or conditionally short-circuited to reduce API calls when possible.
 - Each test focuses on a single responsibility, avoiding overlap.
 - `yfinance.download()` is now mocked in all data layer tests to remove live API dependencies and ensure deterministic, offline test execution.
+- Backtest tests emphasise **economic correctness** (PnL signs) and **look-ahead bias prevention**, which are critical for valid strategy evaluation.

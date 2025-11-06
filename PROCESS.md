@@ -16,6 +16,14 @@ The goal is to collect clean, time-aligned data that can be compared directly be
 3. Handle missing data by removing dates where one asset has no price, or filling in small gaps where needed to prevent misalignment.  
 4. Convert all timestamps to **UTC** to ensure both datasets share the same timezone reference.
 
+**The output:**
+
+A clean DataFrame with:
+- **Two price columns**: One for each asset (e.g., `SPY`, `QQQ`)
+- **UTC-indexed dates**: All timestamps standardised to UTC timezone
+- **No missing values**: Rows with incomplete data removed
+- **Aligned dates**: Only dates where both assets have valid prices
+
 This process ensures the dataset is synchronised and reliable before we start comparing the prices.
 
 ---
@@ -55,6 +63,16 @@ Spread_t = A_t - β_t \times B_t
 
 The spread captures relative mispricing and forms the foundation of the pairs trading strategy.
 
+**The output:**
+
+The function adds four new columns to our data:
+- **`beta`**: The rolling hedge ratio (β) between the two assets
+- **`spread`**: The adjusted price difference (A - β × B)
+- **`spread_mean`**: Rolling average of the spread over the lookback window
+- **`spread_std`**: Rolling standard deviation of the spread
+
+These columns prepare the data for z-score calculation in the next step.
+
 ---
 
 ## Process 3 — Z-Score Normalisation
@@ -69,6 +87,13 @@ Z_t = \frac{Spread_t - \text{Mean}(Spread_{t-N:t})}{\text{Std}(Spread_{t-N:t})}
 - \(Z_t = 0\): the pair is balanced (normal relationship)  
 - \(Z_t > +2\): the spread is unusually wide (potential short signal)  
 - \(Z_t < -2\): the spread is unusually narrow (potential long signal)
+
+**The output:**
+
+The function adds one critical column:
+- **`zscore`**: The standardised spread value
+
+This z-score is the primary signal we monitor. Values near zero indicate normal behaviour, while extreme values (beyond ±2) suggest trading opportunities.
 
 The z-score converts spreads into a consistent statistical scale, allowing all asset pairs to be compared on equal terms.
 
@@ -146,3 +171,57 @@ The function adds a new column called "signal" to our data:
 - **0** means we have no position (we're waiting for the next opportunity)
 
 This signal column tells us exactly what trade to make on each day, based on how far apart the prices have moved.
+
+---
+
+## Process 6 — Backtesting
+Implemented in: `/src/backtest.py`
+
+At this stage, we have trading signals that tell us when to open and close positions.  
+Now we need to simulate how those trades would have performed historically to measure profitability and risk.
+
+**The goal:**
+
+Calculate the profit and loss (PnL) that would have been generated if we had followed our trading signals in the past.  
+This helps us understand whether the strategy is profitable and how much risk we're taking.
+
+**How it works:**
+
+1. **Calculate spread returns:**
+   - For each day, we measure how much the spread changed compared to the previous day.
+   - This is calculated as: `spread_return = (spread_today - spread_yesterday) / spread_yesterday`
+   - The spread return tells us how much the price relationship moved, which directly affects our profit or loss.
+
+2. **Apply signals to returns:**
+   - We multiply the spread return by the signal from the **previous day**.
+   - This is critical: we use the previous day's signal because we can only trade based on information available before today.
+   - If we had a **long position** (+1) and the spread increased, we make money.
+   - If we had a **short position** (-1) and the spread decreased, we make money.
+   - If we had **no position** (0), we make no profit or loss.
+
+3. **Prevent look-ahead bias:**
+   - The signal is shifted by one period to ensure we're not using today's information to make today's trade.
+   - This simulates realistic trading conditions where we can only act on yesterday's closing signal.
+   - The first row always has zero PnL because there's no prior signal to trade on.
+
+4. **Calculate cumulative PnL:**
+   - We sum up all the daily profits and losses to track total performance over time.
+   - This shows us how the strategy would have grown (or declined) our capital over the entire period.
+
+**The output:**
+
+The backtest adds three new columns to our data:
+- **`spread_ret`**: The percentage change in the spread from one day to the next
+- **`pnl`**: The profit or loss for each day based on our position
+- **`cum_pnl`**: The cumulative total of all profits and losses up to that point
+
+**Example:**
+
+If the spread was 10 yesterday and 11 today, and we had a long position:
+- Spread return = (11 - 10) / 10 = 0.10 (10% increase)
+- PnL = 0.10 × 1 (long signal) = +0.10 (we made 10%)
+
+If we had a short position instead:
+- PnL = 0.10 × -1 (short signal) = -0.10 (we lost 10%)
+
+This process transforms our trading signals into measurable financial outcomes, allowing us to evaluate whether the strategy is worth implementing with real capital.

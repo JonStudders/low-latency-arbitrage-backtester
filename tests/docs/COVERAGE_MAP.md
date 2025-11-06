@@ -13,6 +13,12 @@
 | src/preprocess.py | prepare_spread | test_prepare_spread_raises_for_invalid_columns | Confirms defensive input validation |
 | src/preprocess.py | prepare_spread | test_prepare_spread_handles_missing_data_gracefully | Ensures NaN cleaning post-rolling |
 | src/preprocess.py | prepare_spread | test_prepare_spread_respects_lookback_window | Validates proper rolling window truncation |
+| src/preprocess.py | prepare_spread | test_beta_calculation_accuracy | Validates hedge ratio calculation with known asset relationships |
+| src/preprocess.py | prepare_spread | test_spread_calculation_with_known_beta | Confirms spread formula implementation correctness |
+| src/preprocess.py | prepare_spread | test_zscore_has_zero_mean_unit_variance | Validates rolling z-scores have approximately zero mean (not unit variance due to time-varying local normalisation) |
+| src/preprocess.py | prepare_spread | test_constant_spread_produces_zero_zscore | Ensures constant prices produce zero z-scores without NaN errors when std=0 |
+| src/preprocess.py | prepare_spread | test_beta_backfill_handles_initial_nans | Confirms beta backfill eliminates NaN values |
+| src/preprocess.py | prepare_spread | test_spread_column_exists_and_is_numeric | Validates spread column creation and data type |
 | src/signals.py | generate_trade_signals | test_valid_dataframe_generates_signals | Verifies correct output structure with signal column |
 | src/signals.py | generate_trade_signals | test_entry_and_exit_behavior | Confirms entry and exit logic based on z-score thresholds |
 | src/signals.py | generate_trade_signals | test_forward_fill_maintains_position | Ensures position persistence until exit condition |
@@ -20,3 +26,17 @@
 | src/signals.py | generate_trade_signals | test_threshold_validation | Checks that entry_z must be greater than exit_z |
 | src/signals.py | generate_trade_signals | test_missing_column_raises_error | Confirms defensive validation for missing zscore column |
 | src/signals.py | generate_trade_signals | test_nan_values_do_not_break_signal_generation | Ensures NaN values don't break signal continuity |
+| src/backtest.py | run_backtest | test_run_backtest_returns_expected_columns | Verifies output contains spread_ret, pnl, and cum_pnl columns |
+| src/backtest.py | run_backtest | test_run_backtest_computes_valid_pnl | Validates cumulative PnL equals sum of incremental PnL |
+| src/backtest.py | run_backtest | test_run_backtest_raises_for_missing_columns | Ensures ValueError raised for missing required columns |
+| src/backtest.py | run_backtest | test_flat_signal_results_in_zero_pnl | Confirms zero PnL when no positions are held |
+| src/backtest.py | run_backtest | test_signal_shift_prevents_lookahead_bias | Critical validation preventing look-ahead bias |
+| src/backtest.py | run_backtest | test_long_position_profits_from_spread_increase | Validates long position economic logic (profit on rise) |
+| src/backtest.py | run_backtest | test_short_position_profits_from_spread_decrease | Validates short position economic logic (profit on fall) |
+| src/backtest.py | run_backtest | test_long_position_loses_from_spread_decrease | Confirms long positions lose when spread falls |
+| src/backtest.py | run_backtest | test_position_flip_from_long_to_short | Validates PnL calculation during position transitions |
+| src/backtest.py | run_backtest | test_position_entry_from_flat | Confirms zero PnL during entry period due to signal lag |
+| src/backtest.py | run_backtest | test_spread_return_calculation | Validates spread return calculated as percentage change |
+| src/backtest.py | run_backtest | test_pnl_calculation_with_known_values | Confirms numerical precision with hand-calculated values |
+| src/backtest.py | run_backtest | test_empty_dataframe_handling | Edge case validation for empty inputs |
+| src/backtest.py | run_backtest | test_single_row_dataframe | Edge case validation for single-row inputs |

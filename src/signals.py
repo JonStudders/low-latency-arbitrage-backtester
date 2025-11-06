@@ -46,30 +46,36 @@ def generate_trade_signals(
   if entry_z <= exit_z:
     raise ValueError("entry_z must be strictly greater than exit_z to avoid chattering.")
 
-  # Make a copy so we don't modify the original data.
+  # Handle empty DataFrame gracefully
+  if df.empty:
+    return df
+
+  # Make a copy so we don't modify the original data
   out = df.copy()
 
-  # Start flat (no active trades).
+  # Start with no active positions (flat)
   out["signal"] = 0
 
-  # Entry conditions
-  out.loc[out[column] > +entry_z, "signal"] = -1  # short spread, z-score above +entry_z
-  out.loc[out[column] < -entry_z, "signal"] = +1  # long spread, z-score below -entry_z
+  # Mark entry points based on extreme z-score values
+  out.loc[out[column] > +entry_z, "signal"] = -1  # Short spread when z-score is high
+  out.loc[out[column] < -entry_z, "signal"] = +1  # Long spread when z-score is low
 
-  # Carry forward last active position until exit condition is met.
+  # Keep the current position active until we hit an exit signal
+  # This prevents us from closing trades prematurely
+  # Replace zeros with NA, forward-fill the non-zero signals, then fill remaining NAs with 0
   out["signal"] = (
     out["signal"]
-    .replace(0, pd.NA)
-    .ffill()
-    .fillna(0)
-    .infer_objects(copy=False)
+    .astype('Int64')     # Convert to nullable integer type first
+    .replace(0, pd.NA)   # Mark flat periods as NA so they don't block forward-fill
+    .ffill()             # Propagate last active signal forward
+    .fillna(0)           # Any remaining NAs become flat positions
   )
 
-  # Exit trades when z-score returns within the neutral band.
+  # Close all positions when z-score returns to normal levels
   exiting = out[column].abs() <= exit_z
   out.loc[exiting, "signal"] = 0
 
-  # Ensure dtype is int for consistency.
+  # Convert to integer type for consistency
   out["signal"] = out["signal"].astype(int)
 
   return out

@@ -89,13 +89,15 @@ LASE/
 │   └── run_signals_test.py        # Signal generation validation
 ├── src/                            # Source code modules
 │   ├── __init__.py                # Package initialisation
-│   ├── backtest.py                # Backtesting engine and performance metrics
+│   ├── backtest.py                # Backtesting engine (PnL calculation)
 │   ├── data_utils.py              # Market data download and utilities
+│   ├── metrics.py                 # Performance metrics (Sharpe, Sortino, drawdown, etc.)
 │   ├── preprocess.py              # Spread calculation and z-score preprocessing
 │   └── signals.py                 # Trading signal generation logic
-├── tests/                          # Test suite (50 tests, 100% coverage)
-│   ├── test_backtest.py           # Tests for backtest and metrics (27 tests)
+├── tests/                          # Test suite (53 tests, 100% coverage)
+│   ├── test_backtest.py           # Tests for backtest engine (14 tests)
 │   ├── test_data_utils.py         # Tests for data download functions (5 tests)
+│   ├── test_metrics.py            # Tests for performance metrics (16 tests)
 │   ├── test_preprocess.py         # Tests for spread preprocessing (11 tests)
 │   ├── test_signals.py            # Tests for signal generation (7 tests)
 │   └── docs/                      # Test documentation

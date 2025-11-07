@@ -11,7 +11,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 from data_utils import download_data
 from preprocess import prepare_spread
 from signals import generate_trade_signals
-from backtest import run_backtest, calculate_performance_metrics
+from backtest import run_backtest
+from metrics import calculate_performance_metrics
 
 
 ## Functions
@@ -88,9 +89,11 @@ def main(show_graphs: bool = True):
     
     print(f"  Total Return:     {metrics['total_return']:>8.4f}")
     print(f"  Sharpe Ratio:     {metrics['sharpe_ratio']:>8.2f}")
+    print(f"  Sortino Ratio:    {metrics['sortino_ratio']:>8.2f}")
     print(f"  Max Drawdown:     {metrics['max_drawdown']:>8.4f}")
     print(f"  Win Rate:         {metrics['win_rate']:>8.2%}")
     print(f"  Num Trades:       {metrics['num_trades']:>8d}")
+    print(f"  Turnover:         {metrics['turnover']:>8.4f}")
     print(f"  Avg Win:          {metrics['avg_win']:>8.4f}")
     print(f"  Avg Loss:         {metrics['avg_loss']:>8.4f}")
     print(f"  Profit Factor:    {metrics['profit_factor']:>8.2f}")

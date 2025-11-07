@@ -101,12 +101,12 @@ Verify correct PnL calculation, look-ahead bias prevention, and economic logic o
 
 ---
 
-## Module: src/backtest.py
+## Module: src/metrics.py
 Component under test: `calculate_performance_metrics()`
 
 ### Purpose
 To validate the **performance metrics calculation** that evaluates trading strategy quality.
-Verify correct computation of risk-adjusted returns, drawdown analysis, and trade statistics.
+Verify correct computation of risk-adjusted returns (Sharpe and Sortino ratios), drawdown analysis, and trade statistics including turnover.
 
 ---
 
@@ -118,15 +118,18 @@ Verify correct computation of risk-adjusted returns, drawdown analysis, and trad
 | `test_calculate_performance_metrics_raises_for_missing_columns` | Raises ValueError when required input columns are missing | Ensures defensive validation of input data |
 | `test_total_return_calculation` | Total return equals final cumulative PnL value | Validates basic return calculation |
 | `test_sharpe_ratio_calculation` | Sharpe ratio computed correctly with annualisation factor | Confirms risk-adjusted return calculation |
+| `test_sortino_ratio_calculation` | Sortino ratio computed correctly using only downside volatility | Validates downside risk-adjusted return calculation |
 | `test_max_drawdown_calculation` | Maximum drawdown captures worst peak-to-trough decline | Validates downside risk measurement |
 | `test_win_rate_calculation` | Win rate percentage calculated correctly from profitable days | Confirms trade success rate calculation |
 | `test_num_trades_calculation` | Number of trades counts position changes accurately | Validates trade frequency tracking |
+| `test_turnover_calculation` | Turnover measures average daily absolute position change | Validates trading activity metric |
 | `test_avg_win_and_avg_loss_calculation` | Average win and loss values computed correctly | Confirms risk-reward profile calculation |
 | `test_profit_factor_calculation` | Profit factor ratio calculated as gross profit / gross loss | Validates profitability ratio |
 | `test_empty_dataframe_returns_default_metrics` | Empty DataFrame handled gracefully with default values | Edge case validation for empty inputs |
 | `test_all_winning_trades_profit_factor` | Profit factor is infinity when there are no losses | Handles edge case of perfect strategy |
-| `test_all_losing_trades_profit_factor` | Profit factor is NaN when there are no wins | Handles edge case of losing strategy |
+| `test_all_losing_trades_profit_factor` | Profit factor is 0.0 when there are no wins | Handles edge case of losing strategy |
 | `test_win_rate_with_no_active_positions` | Win rate is zero when no positions are taken | Validates behaviour with flat signals only |
+| `test_sortino_ratio_with_no_downside` | Sortino ratio is NaN when there are no negative returns | Handles edge case of no downside volatility |
 
 ---
 

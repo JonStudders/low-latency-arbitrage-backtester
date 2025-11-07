@@ -229,7 +229,7 @@ This process transforms our trading signals into measurable financial outcomes, 
 ---
 
 ## Process 7 — Performance Metrics
-Implemented in: `/src/backtest.py`
+Implemented in: `/src/metrics.py`
 
 After running the backtest, we need to evaluate how good the strategy actually is.  
 Raw profit numbers don't tell the full story, we need to understand the risk we took to achieve those returns.
@@ -245,7 +245,7 @@ Calculate industry-standard performance metrics that allow us to compare this st
    This is simply the last value in our cumulative PnL column.
 
 2. **Sharpe Ratio**  
-   Measures risk-adjusted returns by comparing average profit to volatility.  
+   Measures risk-adjusted returns by comparing average profit to total volatility.  
    Formula: (Average Daily Return / Standard Deviation of Returns) × √252  
    
    - A Sharpe ratio above 1.0 is considered acceptable  
@@ -253,6 +253,14 @@ Calculate industry-standard performance metrics that allow us to compare this st
    - Above 3.0 is excellent  
    
    The √252 factor annualises the ratio (252 trading days per year).
+
+3. **Sortino Ratio**  
+   Similar to Sharpe ratio but only penalises downside volatility (negative returns).  
+   Formula: (Average Daily Return / Downside Standard Deviation) × √252  
+   
+   - More relevant for strategies with asymmetric return distributions  
+   - Higher Sortino ratio indicates better risk-adjusted returns  
+   - Typically higher than Sharpe ratio since it ignores upside volatility
 
 3. **Maximum Drawdown**  
    The worst peak-to-trough decline in cumulative PnL.  
@@ -269,11 +277,19 @@ Calculate industry-standard performance metrics that allow us to compare this st
    Total count of position changes throughout the backtest.  
    This helps us understand trading frequency and potential transaction costs.
 
-6. **Average Win / Average Loss**  
+6. **Turnover**  
+   Average daily absolute position change.  
+   Measures how frequently positions are adjusted.  
+   
+   - Higher turnover indicates more active trading  
+   - Important for estimating transaction costs  
+   - Calculated as mean of absolute signal changes
+
+7. **Average Win / Average Loss**  
    The mean profit on winning days and mean loss on losing days.  
    These metrics help us understand the risk-reward profile of individual trades.
 
-7. **Profit Factor**  
+8. **Profit Factor**  
    Ratio of gross profits to gross losses.  
    
    - Profit factor > 1.0 means the strategy is profitable overall  
@@ -282,7 +298,7 @@ Calculate industry-standard performance metrics that allow us to compare this st
 
 **The output:**
 
-A dictionary containing all eight metrics, which can be printed as a performance summary or saved for comparison across different asset pairs or strategy configurations.
+A dictionary containing all ten metrics, which can be printed as a performance summary or saved for comparison across different asset pairs or strategy configurations.
 
 **Example output:**
 
@@ -290,9 +306,11 @@ A dictionary containing all eight metrics, which can be printed as a performance
 Performance Metrics:
   Total Return:     0.1250  (12.5% cumulative return)
   Sharpe Ratio:     1.85    (good risk-adjusted performance)
+  Sortino Ratio:    2.12    (better downside risk-adjusted performance)
   Max Drawdown:    -0.0450  (-4.5% worst decline)
   Win Rate:         0.58    (58% of trades profitable)
   Num Trades:       42      (42 position changes)
+  Turnover:         0.0325  (average daily position change)
   Avg Win:          0.0025  (0.25% average profit per winning day)
   Avg Loss:        -0.0018  (-0.18% average loss per losing day)
   Profit Factor:    1.65    (£1.65 profit per £1 loss)

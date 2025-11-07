@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 from data_utils import download_data
 from preprocess import prepare_spread
 from signals import generate_trade_signals
-from backtest import run_backtest
+from backtest import run_backtest, calculate_performance_metrics
 
 
 ## Functions
@@ -81,11 +81,20 @@ def main(show_graphs: bool = True):
     df_bt.to_csv(save_path, index=True)
     print(f"Saved backtest results to {save_path.resolve()}")
 
-    # Print performance summary.
-    total_pnl = df_bt["cum_pnl"].iloc[-1]
-    trade_count = (df_signals["signal"].diff().abs() > 0).sum()
-    print(f"Total cumulative PnL: {total_pnl:.4f}")
-    print(f"Number of trades: {trade_count}")
+    # Calculate and print performance metrics.
+    print("\nPerformance Metrics:")
+    print("-" * 50)
+    metrics = calculate_performance_metrics(df_bt)
+    
+    print(f"  Total Return:     {metrics['total_return']:>8.4f}")
+    print(f"  Sharpe Ratio:     {metrics['sharpe_ratio']:>8.2f}")
+    print(f"  Max Drawdown:     {metrics['max_drawdown']:>8.4f}")
+    print(f"  Win Rate:         {metrics['win_rate']:>8.2%}")
+    print(f"  Num Trades:       {metrics['num_trades']:>8d}")
+    print(f"  Avg Win:          {metrics['avg_win']:>8.4f}")
+    print(f"  Avg Loss:         {metrics['avg_loss']:>8.4f}")
+    print(f"  Profit Factor:    {metrics['profit_factor']:>8.2f}")
+    print("-" * 50)
 
     # Plot cumulative PnL using pyplot if enabled.
     if show_graphs:
@@ -117,5 +126,5 @@ def main(show_graphs: bool = True):
 
 
 if __name__ == "__main__":
-  SHOW_GRAPHS = True
+  SHOW_GRAPHS = False
   main(show_graphs=SHOW_GRAPHS)

@@ -40,3 +40,16 @@
 | src/backtest.py | run_backtest | test_pnl_calculation_with_known_values | Confirms numerical precision with hand-calculated values |
 | src/backtest.py | run_backtest | test_empty_dataframe_handling | Edge case validation for empty inputs |
 | src/backtest.py | run_backtest | test_single_row_dataframe | Edge case validation for single-row inputs |
+| src/backtest.py | calculate_performance_metrics | test_calculate_performance_metrics_returns_expected_keys | Verifies output dictionary contains all 8 required metric keys |
+| src/backtest.py | calculate_performance_metrics | test_calculate_performance_metrics_raises_for_missing_columns | Ensures ValueError raised when required columns (pnl, cum_pnl, signal) are missing |
+| src/backtest.py | calculate_performance_metrics | test_total_return_calculation | Validates total return equals final cumulative PnL value |
+| src/backtest.py | calculate_performance_metrics | test_sharpe_ratio_calculation | Confirms Sharpe ratio computed with correct annualisation factor (√252) |
+| src/backtest.py | calculate_performance_metrics | test_max_drawdown_calculation | Validates maximum drawdown captures worst peak-to-trough decline |
+| src/backtest.py | calculate_performance_metrics | test_win_rate_calculation | Confirms win rate calculated as percentage of profitable days with active positions |
+| src/backtest.py | calculate_performance_metrics | test_num_trades_calculation | Validates trade count equals number of position changes (signal transitions) |
+| src/backtest.py | calculate_performance_metrics | test_avg_win_and_avg_loss_calculation | Confirms average win and average loss calculated correctly from winning/losing days |
+| src/backtest.py | calculate_performance_metrics | test_profit_factor_calculation | Validates profit factor as ratio of gross profits to gross losses |
+| src/backtest.py | calculate_performance_metrics | test_empty_dataframe_returns_default_metrics | Edge case: empty DataFrame returns sensible default values without crashing |
+| src/backtest.py | calculate_performance_metrics | test_all_winning_trades_profit_factor | Edge case: profit factor is infinity when there are no losses |
+| src/backtest.py | calculate_performance_metrics | test_all_losing_trades_profit_factor | Edge case: profit factor is 0.0 when there are no wins |
+| src/backtest.py | calculate_performance_metrics | test_win_rate_with_no_active_positions | Edge case: win rate is 0.0 when all signals are flat (no positions taken) |

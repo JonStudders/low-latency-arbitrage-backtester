@@ -10,10 +10,11 @@ This project follows a phased development approach, building from statistical re
 - [x] Threshold analysis experiments
 - [x] Comprehensive test suite (22 tests, 100% coverage)
 
-### Phase 2: Backtesting & Metrics (In Progress)
+### Phase 2: Backtesting & Metrics (Complete)
 - [x] Test-driven backtest specification (`test_backtest.py`)
-- [ ] Backtest implementation (`backtest.py`)
-- [ ] Performance metrics (Sharpe, drawdown, win rate)
+- [x] Backtest implementation (`backtest.py`)
+- [x] Performance metrics (Sharpe, drawdown, win rate, profit factor)
+- [x] Comprehensive metrics testing (13 additional tests)
 - [ ] Equity curve visualization
 
 ### Phase 3: Real-Time Prototype (Planned)

@@ -1,6 +1,18 @@
-# Jon Studders - low-latency-arbitrage-backtester
+# Jon Studders - LASE: Low-Latency Arbitrage Strategy Engine
 
-A high-performance statistical arbitrage system designed for pair-trading highly correlated assets, including equities, index products, and commodity futures. The engine uses Python for backtesting and statistical modelling, with the critical, low-latency Z-score signal generation kernel implemented and optimised in C++ using pybind11.
+A high-performance statistical arbitrage system designed for pair-trading highly correlated assets, including equities, index products, and commodity futures. The engine uses Python for backtesting and statistical modelling, with plans to optimise the critical Z-score signal generation kernel in C++ using pybind11 for production deployment.
+
+## Why LASE?
+
+**LASE** stands for **Low-Latency Arbitrage Strategy Engine** — a name that encapsulates the system’s three foundational principles:
+
+| Term | Meaning | Relevance |
+|------|----------|-----------|
+| **Low-Latency** | Focuses on high-performance, C++-based computation and efficient data handling. | Demonstrates proficiency in real-time analytics and performance engineering — key capabilities in quantitative systems development. |
+| **Arbitrage** | Implements statistical arbitrage by exploiting temporary pricing deviations between correlated assets. | Reflects applied understanding of quantitative finance, correlation structures, and mean-reversion modelling. |
+| **Strategy** | Extends beyond data processing to incorporate complete trading logic, from signal generation to backtesting. | Emphasises end-to-end system design and evaluation within a research-to-production workflow. |
+| **Engine** | Designed as a modular, extensible architecture capable of supporting multiple asset classes and execution layers. | Positions the project as a scalable and maintainable platform rather than a single-purpose prototype. |
+
 
 ## Project Goals
 
@@ -12,17 +24,16 @@ This project was developed to demonstrate expertise in statistical arbitrage acr
 The technical focus remains on three key areas:
 1. **Statistical Modelling**: Implementing a mean-reversion strategy based on the relationship between two correlated financial assets.
 2. **Financial Domain Knowledge**: Applying the strategy to pair trading across different markets and calculating standard backtesting metrics (Sharpe Ratio, Max Drawdown).
-3. **Low-Latency Optimisation**: Offloading the high-frequency calculation of the rolling Z-score to a dedicated C++ kernel to simulate real-time performance requirements.
+3. **Low-Latency Optimisation**: Current Python implementation with planned C++ acceleration for rolling Z-score calculations to meet sub-millisecond latency requirements in production (Phase 4).
 
 ## Tech Stack
 
-### Python
+### Python (Current Implementation)
 - `NumPy`, `pandas`, `statsmodels`, `matplotlib`, `yfinance`, `tqdm`
 - Data ingestion, cointegration testing, backtesting, visualisation
 
-### C++:
-- Lib 1
-- Lib 2
+### C++ (Planned - Phase 4)
+- `pybind11` for Python bindings
 
 ## Features
 
@@ -44,7 +55,7 @@ The technical focus remains on three key areas:
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd low-latency-arbitrage-backtester
+cd LASE
 ```
 
 2. Create and activate a virtual environment:
@@ -64,25 +75,37 @@ pip install -r requirements.txt
 ## Project Structure
 
 ```
-low-latency-arbitrage-backtester/
-├── data/                    # Market data files (CSV format)
-│   ├── *_processed.csv     # Preprocessed spread and z-score data
-│   └── *.csv               # Raw downloaded price data
-├── experiments/            # Experimental scripts and validation tools
-│   ├── run_data_utils_test.py
-│   └── run_preprocess_test.py
-├── src/                    # Source code modules
-│   ├── data_utils.py       # Market data download and utilities
-│   └── preprocess.py       # Spread calculation and z-score preprocessing
-├── tests/                  # Test suite
-│   ├── test_data_utils.py  # Tests for data download functions
-│   ├── test_preprocess.py  # Tests for spread preprocessing
-│   └── docs/               # Test documentation
-│       ├── TEST_PLAN.md
-│       └── COVERAGE_MAP.md
-├── requirements.txt        # Python dependencies
-├── pytest.ini             # Pytest configuration
-└── README.md              # This file
+LASE/
+├── data/                           # Market data files (CSV format)
+│   ├── *_backtest.csv             # Backtest results with PnL and metrics
+│   ├── *_signals.csv              # Generated trading signals
+│   ├── *_processed.csv            # Preprocessed spread and z-score data
+│   └── *.csv                      # Raw downloaded price data
+├── experiments/                    # Experimental scripts and validation tools
+│   ├── analyze_zscore_threshold.py # Z-score distribution analysis
+│   ├── run_backtest_test.py       # Full pipeline backtest with metrics
+│   ├── run_data_utils_test.py     # Data download validation
+│   ├── run_preprocess_test.py     # Spread preprocessing validation
+│   └── run_signals_test.py        # Signal generation validation
+├── src/                            # Source code modules
+│   ├── __init__.py                # Package initialisation
+│   ├── backtest.py                # Backtesting engine and performance metrics
+│   ├── data_utils.py              # Market data download and utilities
+│   ├── preprocess.py              # Spread calculation and z-score preprocessing
+│   └── signals.py                 # Trading signal generation logic
+├── tests/                          # Test suite (50 tests, 100% coverage)
+│   ├── test_backtest.py           # Tests for backtest and metrics (27 tests)
+│   ├── test_data_utils.py         # Tests for data download functions (5 tests)
+│   ├── test_preprocess.py         # Tests for spread preprocessing (11 tests)
+│   ├── test_signals.py            # Tests for signal generation (7 tests)
+│   └── docs/                      # Test documentation
+│       ├── COVERAGE_MAP.md        # Test-to-function coverage mapping
+│       └── TEST_PLAN.md           # Detailed test specifications
+├── PROCESS.md                      # End-to-end workflow documentation
+├── ROADMAP.md                      # Phased development plan
+├── requirements.txt                # Python dependencies
+├── pytest.ini                      # Pytest configuration
+└── README.md                       # This file
 ```
 
 ## Usage
@@ -237,4 +260,4 @@ SOFTWARE.
 
 **Jon Studders**
 - LinkedIn: [Jon Studders](https://www.linkedin.com/in/jon-studders-1236841a4/)
-- GitHub: [@JonStudders](https://github.com/JonStudders/low-latency-arbitrage-backtester)
+- GitHub: [@JonStudders](https://github.com/JonStudders/LASE)

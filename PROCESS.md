@@ -225,3 +225,81 @@ If we had a short position instead:
 - PnL = 0.10 × -1 (short signal) = -0.10 (we lost 10%)
 
 This process transforms our trading signals into measurable financial outcomes, allowing us to evaluate whether the strategy is worth implementing with real capital.
+
+---
+
+## Process 7 — Performance Metrics
+Implemented in: `/src/backtest.py`
+
+After running the backtest, we need to evaluate how good the strategy actually is.  
+Raw profit numbers don't tell the full story, we need to understand the risk we took to achieve those returns.
+
+**The goal:**
+
+Calculate industry-standard performance metrics that allow us to compare this strategy against other investment opportunities and assess whether the returns justify the risks.
+
+**What we calculate:**
+
+1. **Total Return**  
+   The final cumulative profit or loss over the entire backtest period.  
+   This is simply the last value in our cumulative PnL column.
+
+2. **Sharpe Ratio**  
+   Measures risk-adjusted returns by comparing average profit to volatility.  
+   Formula: (Average Daily Return / Standard Deviation of Returns) × √252  
+   
+   - A Sharpe ratio above 1.0 is considered acceptable  
+   - Above 2.0 is very good  
+   - Above 3.0 is excellent  
+   
+   The √252 factor annualises the ratio (252 trading days per year).
+
+3. **Maximum Drawdown**  
+   The worst peak-to-trough decline in cumulative PnL.  
+   This tells us the largest loss we would have experienced from any previous high point.  
+   
+   For example, if our strategy grew from £0 to £1000, then dropped to £700, the maximum drawdown is -£300.  
+   This metric is critical for understanding downside risk.
+
+4. **Win Rate**  
+   The percentage of days where we made money (only counting days with active positions).  
+   A 60% win rate means we were profitable on 6 out of every 10 trading days.
+
+5. **Number of Trades**  
+   Total count of position changes throughout the backtest.  
+   This helps us understand trading frequency and potential transaction costs.
+
+6. **Average Win / Average Loss**  
+   The mean profit on winning days and mean loss on losing days.  
+   These metrics help us understand the risk-reward profile of individual trades.
+
+7. **Profit Factor**  
+   Ratio of gross profits to gross losses.  
+   
+   - Profit factor > 1.0 means the strategy is profitable overall  
+   - Profit factor of 2.0 means we make £2 for every £1 we lose  
+   - Values below 1.0 indicate a losing strategy
+
+**The output:**
+
+A dictionary containing all eight metrics, which can be printed as a performance summary or saved for comparison across different asset pairs or strategy configurations.
+
+**Example output:**
+
+```
+Performance Metrics:
+  Total Return:     0.1250  (12.5% cumulative return)
+  Sharpe Ratio:     1.85    (good risk-adjusted performance)
+  Max Drawdown:    -0.0450  (-4.5% worst decline)
+  Win Rate:         0.58    (58% of trades profitable)
+  Num Trades:       42      (42 position changes)
+  Avg Win:          0.0025  (0.25% average profit per winning day)
+  Avg Loss:        -0.0018  (-0.18% average loss per losing day)
+  Profit Factor:    1.65    (£1.65 profit per £1 loss)
+```
+
+These metrics allow us to answer critical questions:
+- Is the strategy profitable after accounting for risk?
+- How much capital drawdown should we expect?
+- Does the strategy generate enough trades to be practical?
+- Are the wins large enough to compensate for the losses?

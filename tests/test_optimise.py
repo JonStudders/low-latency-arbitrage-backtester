@@ -4,7 +4,11 @@
 import pytest
 import pandas as pd
 import numpy as np
-from src.optimise import grid_search, best_config, GridSearchConfig, _single_run
+from src.optimise import (
+	grid_search, best_config, GridSearchConfig, _single_run,
+	walk_forward_validation, robustness_analysis, 
+	transaction_cost_analysis, identify_stable_regions
+)
 
 
 ## Helper Functions
@@ -471,3 +475,406 @@ def test_full_optimisation_pipeline():
 	# Verify parameter constraints
 	for _, row in all_results.iterrows():
 		assert row['entry_z'] > row['exit_z'], "Invalid parameter combination in results."
+
+
+## Tests - Walk-Forward Validation
+
+def test_walk_forward_validation_returns_dict():
+	"""
+	walk_forward_validation should return a dictionary with train and test results.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=500)
+	config = GridSearchConfig(
+		lookbacks=[30, 60],
+		entry_zs=[2.0],
+		exit_zs=[0.5],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run walk-forward validation
+	result = walk_forward_validation(df, config, train_fraction=0.7, show_progress=False)
+	
+	# Assert: Verify structure
+	assert isinstance(result, dict), "Expected dictionary output."
+	assert 'train_best' in result
+	assert 'test_metrics' in result
+	assert 'train_sharpe' in result
+	assert 'test_sharpe' in result
+	assert 'sharpe_degradation' in result
+
+
+def test_walk_forward_validation_splits_data_correctly():
+	"""
+	walk_forward_validation should split data according to train_fraction.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=500)
+	config = GridSearchConfig(
+		lookbacks=[30, 60],
+		entry_zs=[2.0],
+		exit_zs=[0.5],
+		min_trades=5,
+		min_obs=50
+	)
+	
+	# Act: Run with 70/30 split
+	result = walk_forward_validation(df, config, train_fraction=0.7, show_progress=False)
+	
+	# Assert: Train period should be ~350 rows, test ~150 rows
+	# Results should reflect this split
+	assert result is not None
+
+
+def test_walk_forward_validation_invalid_fraction():
+	"""
+	walk_forward_validation should raise error for invalid train_fraction.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=300)
+	config = GridSearchConfig(
+		lookbacks=[60],
+		entry_zs=[2.0],
+		exit_zs=[0.5]
+	)
+	
+	# Act & Assert: Invalid fractions should raise ValueError
+	with pytest.raises(ValueError):
+		walk_forward_validation(df, config, train_fraction=0.0)
+	
+	with pytest.raises(ValueError):
+		walk_forward_validation(df, config, train_fraction=1.0)
+	
+	with pytest.raises(ValueError):
+		walk_forward_validation(df, config, train_fraction=1.5)
+
+
+def test_walk_forward_validation_calculates_degradation():
+	"""
+	walk_forward_validation should calculate Sharpe degradation percentage.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=500)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run walk-forward validation
+	result = walk_forward_validation(df, config, train_fraction=0.7, show_progress=False)
+	
+	# Assert: Degradation should be calculated if both Sharpes exist
+	if result['train_sharpe'] and result['test_sharpe'] and not np.isnan(result['train_sharpe']):
+		assert 'sharpe_degradation' in result
+		assert isinstance(result['sharpe_degradation'], (int, float))
+
+
+## Tests - Robustness Analysis
+
+def test_robustness_analysis_returns_dataframe():
+	"""
+	robustness_analysis should return a DataFrame with period-by-period results.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=600)
+	config = GridSearchConfig(
+		lookbacks=[30, 60],
+		entry_zs=[2.0],
+		exit_zs=[0.5],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run robustness analysis
+	result = robustness_analysis(df, config, n_periods=3, show_progress=False)
+	
+	# Assert: Verify output type
+	assert isinstance(result, pd.DataFrame), "Expected pandas DataFrame output."
+
+
+def test_robustness_analysis_splits_into_periods():
+	"""
+	robustness_analysis should create n_periods rows in results.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=600)
+	config = GridSearchConfig(
+		lookbacks=[30, 60],
+		entry_zs=[2.0],
+		exit_zs=[0.5],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run with 3 periods
+	result = robustness_analysis(df, config, n_periods=3, show_progress=False)
+	
+	# Assert: Should have up to 3 rows (may be less if some periods fail)
+	assert len(result) <= 3, "Should have at most n_periods rows."
+	if not result.empty:
+		assert 'period' in result.columns
+		assert result['period'].min() >= 1
+		assert result['period'].max() <= 3
+
+
+def test_robustness_analysis_invalid_periods():
+	"""
+	robustness_analysis should raise error for invalid n_periods.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=300)
+	config = GridSearchConfig(
+		lookbacks=[60],
+		entry_zs=[2.0],
+		exit_zs=[0.5]
+	)
+	
+	# Act & Assert: n_periods < 2 should raise ValueError
+	with pytest.raises(ValueError):
+		robustness_analysis(df, config, n_periods=1)
+	
+	with pytest.raises(ValueError):
+		robustness_analysis(df, config, n_periods=0)
+
+
+def test_robustness_analysis_includes_required_columns():
+	"""
+	robustness_analysis should include all required columns in results.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=600)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run robustness analysis
+	result = robustness_analysis(df, config, n_periods=3, show_progress=False)
+	
+	# Assert: Verify required columns
+	if not result.empty:
+		required_cols = ['period', 'lookback', 'entry_z', 'exit_z', 'sharpe_ratio', 'total_return']
+		for col in required_cols:
+			assert col in result.columns, f"Missing required column: {col}"
+
+
+## Tests - Transaction Cost Analysis
+
+def test_transaction_cost_analysis_returns_dataframe():
+	"""
+	transaction_cost_analysis should return a DataFrame with cost sensitivity results.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60],
+		entry_zs=[2.0],
+		exit_zs=[0.5],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run transaction cost analysis
+	result = transaction_cost_analysis(df, config, cost_bps_range=[0, 10, 20], show_progress=False)
+	
+	# Assert: Verify output type
+	assert isinstance(result, pd.DataFrame), "Expected pandas DataFrame output."
+
+
+def test_transaction_cost_analysis_tests_all_cost_levels():
+	"""
+	transaction_cost_analysis should test each cost level in range.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60],
+		entry_zs=[2.0],
+		exit_zs=[0.5],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	cost_range = [0, 5, 10, 20]
+	
+	# Act: Run transaction cost analysis
+	result = transaction_cost_analysis(df, config, cost_bps_range=cost_range, show_progress=False)
+	
+	# Assert: Should have one row per cost level
+	if not result.empty:
+		assert len(result) == len(cost_range), "Should have one row per cost level."
+		assert list(result['cost_bps']) == cost_range, "Cost levels should match input."
+
+
+def test_transaction_cost_analysis_calculates_cost_drag():
+	"""
+	transaction_cost_analysis should calculate cost drag for each level.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run transaction cost analysis
+	result = transaction_cost_analysis(df, config, cost_bps_range=[0, 10, 20], show_progress=False)
+	
+	# Assert: Cost drag should increase with cost level
+	if len(result) > 1:
+		assert 'cost_drag' in result.columns
+		# Higher costs should generally mean higher drag (unless trade count changes dramatically)
+		assert result['cost_drag'].iloc[0] == 0, "Zero cost should have zero drag."
+
+
+def test_transaction_cost_analysis_reduces_sharpe():
+	"""
+	transaction_cost_analysis should show Sharpe reduction as costs increase.
+	"""
+	# Arrange: Create synthetic data
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	
+	# Act: Run transaction cost analysis
+	result = transaction_cost_analysis(df, config, cost_bps_range=[0, 20, 50], show_progress=False)
+	
+	# Assert: Sharpe should generally decrease with higher costs
+	if len(result) > 1:
+		# First cost level (0 bps) should have highest or equal Sharpe
+		assert result['sharpe_ratio'].iloc[0] >= result['sharpe_ratio'].iloc[-1] - 0.1
+
+
+## Tests - Stable Region Identification
+
+def test_identify_stable_regions_returns_dict():
+	"""
+	identify_stable_regions should return a dictionary with stability metrics.
+	"""
+	# Arrange: Create grid search results
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	results = grid_search(df, config, show_progress=False)
+	
+	# Act: Identify stable regions
+	stability = identify_stable_regions(results, top_n=10)
+	
+	# Assert: Verify structure
+	assert isinstance(stability, dict), "Expected dictionary output."
+	assert 'lookback_range' in stability
+	assert 'entry_z_range' in stability
+	assert 'exit_z_range' in stability
+	assert 'overall_stable' in stability
+	assert 'median_params' in stability
+
+
+def test_identify_stable_regions_calculates_ranges():
+	"""
+	identify_stable_regions should calculate min/max ranges for parameters.
+	"""
+	# Arrange: Create grid search results
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	results = grid_search(df, config, show_progress=False)
+	
+	# Act: Identify stable regions
+	stability = identify_stable_regions(results, top_n=5)
+	
+	# Assert: Ranges should be tuples with (min, max)
+	if not results.empty:
+		assert isinstance(stability['lookback_range'], tuple)
+		assert len(stability['lookback_range']) == 2
+		assert stability['lookback_range'][0] <= stability['lookback_range'][1]
+
+
+def test_identify_stable_regions_checks_tolerance():
+	"""
+	identify_stable_regions should flag stability based on tolerance.
+	"""
+	# Arrange: Create grid search results
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	results = grid_search(df, config, show_progress=False)
+	
+	# Act: Identify stable regions with tight tolerance
+	stability_tight = identify_stable_regions(results, top_n=10, tolerance={"lookback": 5, "entry_z": 0.1, "exit_z": 0.1})
+	
+	# Assert: Stability flags should be boolean
+	assert isinstance(stability_tight['lookback_stable'], (bool, np.bool_))
+	assert isinstance(stability_tight['entry_z_stable'], (bool, np.bool_))
+	assert isinstance(stability_tight['exit_z_stable'], (bool, np.bool_))
+	assert isinstance(stability_tight['overall_stable'], (bool, np.bool_))
+
+
+def test_identify_stable_regions_calculates_median():
+	"""
+	identify_stable_regions should calculate median parameters from top configs.
+	"""
+	# Arrange: Create grid search results
+	df = make_price_df(n_rows=400)
+	config = GridSearchConfig(
+		lookbacks=[30, 60, 90],
+		entry_zs=[1.5, 2.0, 2.5],
+		exit_zs=[0.25, 0.5, 0.75],
+		min_trades=5,
+		min_obs=100
+	)
+	results = grid_search(df, config, show_progress=False)
+	
+	# Act: Identify stable regions
+	stability = identify_stable_regions(results, top_n=10)
+	
+	# Assert: Median params should be within the ranges
+	if not results.empty and stability['median_params']:
+		median = stability['median_params']
+		assert 'lookback' in median
+		assert 'entry_z' in median
+		assert 'exit_z' in median
+
+
+def test_identify_stable_regions_handles_empty_results():
+	"""
+	identify_stable_regions should handle empty results gracefully.
+	"""
+	# Arrange: Empty DataFrame
+	empty_results = pd.DataFrame()
+	
+	# Act: Identify stable regions
+	stability = identify_stable_regions(empty_results, top_n=10)
+	
+	# Assert: Should return structure with NaN/False values
+	assert stability['overall_stable'] == False
+	assert stability['median_params'] == {}

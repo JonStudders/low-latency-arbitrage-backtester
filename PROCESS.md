@@ -421,6 +421,255 @@ By systematically testing all combinations, we:
 
 2. **Transaction costs**: More trades mean higher costs. A configuration with Sharpe ratio of 2.0 and 100 trades might be worse than Sharpe 1.9 with 30 trades once we account for fees.
 
-3. **Walk-forward validation** (future enhancement): Test parameters on one time period, then validate on a different period to ensure they generalise.
+3. **Walk-forward validation**: Test parameters on one time period, then validate on a different period to ensure they generalise.
 
 This optimisation process transforms our strategy from a fixed set of rules into an adaptive system that can be tuned for different market conditions and asset pairs.
+
+---
+
+## Process 9 — Walk-Forward Validation
+Implemented in: `/src/optimise.py` (walk_forward_validation function)
+
+After finding optimal parameters, we need to test if they actually work on new, unseen data—or if we've just found patterns that only existed in our training period.
+
+**The problem:**
+
+When we optimise parameters on historical data, there's a risk of **overfitting**: finding parameters that work perfectly on that specific time period but fail miserably on new data. It's like memorising exam answers instead of understanding the subject—you'll ace that specific test but fail when the questions change.
+
+**What we do:**
+
+We split our data into two parts:
+1. **Training period** (typically 70% of data): Used to find optimal parameters
+2. **Testing period** (remaining 30%): Used to validate if those parameters still work
+
+This is called **walk-forward validation** because we "walk forward" in time from training to testing.
+
+**How it works:**
+
+1. **Split the data**: If we have 1,000 days of data, use the first 700 days for training and the last 300 for testing.
+
+2. **Optimise on training data**: Run grid search on the 700-day training period to find the best parameters.
+
+3. **Test on unseen data**: Apply those exact same parameters to the 300-day testing period and measure performance.
+
+4. **Compare results**: Calculate how much performance degrades from training to testing.
+
+**Example:**
+
+```
+Training period: 700 days
+  Best parameters found: lookback=60, entry_z=2.0, exit_z=0.5
+  Training Sharpe ratio: 2.15
+
+Testing period: 300 days (using same parameters)
+  Testing Sharpe ratio: 1.95
+  Degradation: 9.3%
+```
+
+**Interpreting results:**
+
+- **Low degradation (0-20%)**: Parameters generalise well. The strategy is robust.
+- **Moderate degradation (20-40%)**: Some overfitting present. Parameters work but with reduced performance.
+- **High degradation (40%+)**: Significant overfitting. Parameters don't generalise—back to the drawing board.
+- **Negative test Sharpe**: Complete failure. Parameters are useless on new data.
+
+**Why this matters:**
+
+Without walk-forward validation, you might deploy a strategy that looked amazing in backtests but loses money in live trading. This process helps separate genuinely robust strategies from lucky curve-fitting.
+
+---
+
+## Process 10 — Robustness Analysis
+Implemented in: `/src/optimise.py` (robustness_analysis function)
+
+Even if parameters pass walk-forward validation, we want to know if they work consistently across different market conditions—or if they only work in specific regimes.
+
+**The problem:**
+
+Markets change. What works during a bull market might fail during a bear market. What works when volatility is low might break when volatility spikes. We need to test if our parameters are **robust** across different conditions.
+
+**What we do:**
+
+We split the data into multiple consecutive periods (typically 3-4) and find the optimal parameters for each period separately. If the optimal parameters are similar across all periods, the strategy is robust. If they're wildly different, the strategy is regime-dependent.
+
+**How it works:**
+
+1. **Split into periods**: Divide 1,000 days into 3 periods of ~333 days each.
+
+2. **Optimise each period**: Run grid search on each period independently.
+
+3. **Compare results**: Look at the optimal parameters from each period.
+
+**Example:**
+
+```
+Period 1 (Days 1-333):
+  Best: lookback=60, entry_z=2.0, exit_z=0.5
+  Sharpe: 2.10
+
+Period 2 (Days 334-666):
+  Best: lookback=65, entry_z=2.0, exit_z=0.5
+  Sharpe: 1.95
+
+Period 3 (Days 667-1000):
+  Best: lookback=55, entry_z=2.25, exit_z=0.5
+  Sharpe: 2.05
+
+Summary:
+  Lookback range: 55-65 (stable)
+  Entry Z range: 2.0-2.25 (stable)
+  Exit Z range: 0.5 (very stable)
+  Mean Sharpe: 2.03
+```
+
+**Interpreting results:**
+
+- **Consistent parameters**: If lookback varies by ±10 days and thresholds by ±0.25, the strategy is robust.
+- **Variable parameters**: If lookback swings from 30 to 120 or thresholds from 1.0 to 3.0, the strategy is regime-dependent.
+- **Consistent Sharpe**: If Sharpe ratio stays positive across all periods, the strategy has persistent edge.
+
+**Why this matters:**
+
+A robust strategy works across bull markets, bear markets, high volatility, and low volatility. A regime-dependent strategy might work brilliantly for 6 months then fail catastrophically when conditions change.
+
+---
+
+## Process 11 — Transaction Cost Sensitivity
+Implemented in: `/src/optimise.py` (transaction_cost_analysis function)
+
+Real trading isn't free. Every trade incurs costs: exchange fees, bid-ask spread, slippage, and potentially market impact. We need to know how these costs affect our strategy.
+
+**The problem:**
+
+A strategy that generates 100 trades might look profitable in a zero-cost backtest but become unprofitable once you account for 10 basis points (0.1%) per trade. We need to understand the **break-even cost** and how parameters should change as costs increase.
+
+**What we do:**
+
+We test the same strategy at different cost levels (0, 5, 10, 20, 50 basis points) and see:
+1. How profitability degrades with costs
+2. Whether optimal parameters change (they should favour fewer trades as costs increase)
+3. What the break-even cost is
+
+**How it works:**
+
+1. **Run baseline optimisation**: Find optimal parameters assuming zero costs.
+
+2. **Apply costs**: For each cost level, calculate:
+   - Cost per trade = 2 × cost_bps / 10,000 (multiply by 2 for entry + exit)
+   - Total cost drag = num_trades × cost_per_trade
+   - Return after costs = total_return - cost_drag
+
+3. **Re-rank configurations**: Sort by Sharpe ratio after costs.
+
+4. **Compare optimal parameters**: See if the best configuration changes.
+
+**Example:**
+
+```
+0 bps cost:
+  Best: lookback=60, entry_z=2.0, exit_z=0.5
+  Trades: 100, Sharpe: 2.15
+
+10 bps cost:
+  Best: lookback=60, entry_z=2.25, exit_z=0.5
+  Trades: 75, Sharpe: 1.85
+
+20 bps cost:
+  Best: lookback=75, entry_z=2.5, exit_z=0.75
+  Trades: 50, Sharpe: 1.45
+
+50 bps cost:
+  Best: lookback=90, entry_z=3.0, exit_z=1.0
+  Trades: 25, Sharpe: 0.65
+```
+
+**Interpreting results:**
+
+- **Entry thresholds increase**: Higher costs favour wider entry thresholds (fewer trades).
+- **Exit thresholds increase**: Wider exits reduce round-trip frequency.
+- **Sharpe degrades**: Performance decreases as costs increase.
+- **Break-even cost**: The cost level where Sharpe drops to zero.
+
+**Why this matters:**
+
+If your strategy becomes unprofitable at 15 bps but your broker charges 20 bps, you'll lose money. This analysis helps you:
+- Negotiate better execution costs
+- Adjust parameters for your actual cost structure
+- Decide if the strategy is viable given your constraints
+
+---
+
+## Process 12 — Stable Parameter Region Identification
+Implemented in: `/src/optimise.py` (identify_stable_regions function)
+
+The final validation step: checking if the top-performing configurations cluster together or are scattered randomly across the parameter space.
+
+**The problem:**
+
+If the #1 configuration has lookback=60 but #2 has lookback=120, and #3 has lookback=30, the strategy is **unstable**—small changes in parameters cause huge performance swings. This suggests overfitting.
+
+If the top 10 configurations all have lookback between 55-65, entry_z between 1.75-2.25, and exit_z between 0.4-0.6, the strategy is **stable**—there's a robust region of good parameters.
+
+**What we do:**
+
+We examine the top N configurations (typically 10) and check if their parameters cluster together within a tolerance range.
+
+**How it works:**
+
+1. **Take top 10 configurations**: Get the 10 best parameter sets by Sharpe ratio.
+
+2. **Calculate ranges**:
+   - Lookback range: min to max lookback values
+   - Entry Z range: min to max entry thresholds
+   - Exit Z range: min to max exit thresholds
+
+3. **Check tolerance**:
+   - Lookback stable if range ≤ 15 days
+   - Entry Z stable if range ≤ 0.5
+   - Exit Z stable if range ≤ 0.25
+
+4. **Calculate median**: Use median parameters from the stable region as final recommendation.
+
+**Example:**
+
+```
+Top 10 configurations:
+  Lookback: 55, 60, 60, 60, 65, 60, 65, 55, 60, 65
+  Entry Z: 2.0, 2.0, 2.25, 2.0, 2.0, 2.25, 2.0, 2.25, 2.0, 2.25
+  Exit Z: 0.5, 0.5, 0.5, 0.5, 0.5, 0.75, 0.5, 0.5, 0.5, 0.5
+
+Analysis:
+  Lookback range: 55-65 (10 days) ✓ STABLE
+  Entry Z range: 2.0-2.25 (0.25) ✓ STABLE
+  Exit Z range: 0.5-0.75 (0.25) ✓ STABLE
+  Overall: STABLE
+
+Recommended parameters (median):
+  Lookback: 60 days
+  Entry Z: 2.0
+  Exit Z: 0.5
+```
+
+**Interpreting results:**
+
+- **All stable**: High confidence in parameters. Small variations won't hurt performance.
+- **Some unstable**: Moderate confidence. Be careful with the unstable parameters.
+- **All unstable**: Low confidence. The strategy might be curve-fitted to noise.
+
+**Why this matters:**
+
+In live trading, you can't execute with the exact parameters from your backtest. Market conditions shift slightly, your execution timing differs, and real-world constraints apply. If your strategy only works with one precise parameter set, it will fail in production. Stable regions give you confidence that the strategy will work even with minor parameter variations.
+
+---
+
+## Summary: Complete Optimisation Workflow
+
+The full optimisation process combines all these steps:
+
+1. **Grid Search**: Find candidate parameter sets
+2. **Walk-Forward Validation**: Test if parameters generalise to new data
+3. **Robustness Analysis**: Test if parameters work across different market regimes
+4. **Transaction Cost Sensitivity**: Adjust for real-world trading costs
+5. **Stable Region Identification**: Confirm parameters aren't overfitted
+
+Only strategies that pass all five tests should be considered for live trading. This rigorous validation process separates genuinely profitable strategies from statistical flukes.

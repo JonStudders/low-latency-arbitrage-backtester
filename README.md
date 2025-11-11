@@ -42,12 +42,25 @@ The technical focus remains on three key areas:
 
 ## Features
 
+### Core Functionality
 - **Robust Data Download**: Automated market data retrieval from Yahoo Finance with timezone-aware date handling
 - **Spread Analysis**: Computes price spreads between asset pairs with configurable rolling windows
 - **Z-Score Calculation**: Statistical normalisation for mean-reversion signal generation
+- **Signal Generation**: Entry/exit signal logic with configurable z-score thresholds
+- **Backtesting Engine**: PnL calculation with look-ahead bias prevention
+- **Performance Metrics**: Sharpe ratio, Sortino ratio, max drawdown, win rate, profit factor
+
+### Parameter Optimisation
+- **Grid Search**: Exhaustive parameter space exploration (1,200+ combinations per pair)
+- **Walk-Forward Validation**: Train/test splits to detect overfitting
+- **Robustness Analysis**: Multi-period parameter stability testing
+- **Transaction Cost Sensitivity**: Cost impact analysis (0-50 bps)
+- **Stable Region Identification**: Parameter clustering and median extraction
+
+### Quality Assurance
+- **Comprehensive Testing**: Full test coverage with pytest
 - **Error Handling**: Graceful handling of invalid tickers, missing data, and API failures
-- **Comprehensive Testing**: Full test coverage with pytest for data utilities and preprocessing functions
-- **Experimentation Tools**: Scripts for batch processing and visualisation of multiple asset pairs
+- **Experimentation Tools**: Scripts for batch processing and visualisation
 
 ## Installation
 
@@ -88,8 +101,10 @@ LASE/
 │   └── *.csv                      # Raw downloaded price data
 ├── experiments/                    # Experimental scripts and validation tools
 │   ├── analyze_zscore_threshold.py # Z-score distribution analysis
+│   ├── run_advanced_optimise.py   # Advanced optimisation with walk-forward validation
 │   ├── run_backtest_test.py       # Full pipeline backtest with metrics
 │   ├── run_data_utils_test.py     # Data download validation
+│   ├── run_optimise_test.py       # Multi-pair parameter optimisation
 │   ├── run_preprocess_test.py     # Spread preprocessing validation
 │   └── run_signals_test.py        # Signal generation validation
 ├── src/                            # Source code modules
@@ -97,14 +112,17 @@ LASE/
 │   ├── backtest.py                # Backtesting engine (PnL calculation)
 │   ├── data_utils.py              # Market data download and utilities
 │   ├── metrics.py                 # Performance metrics (Sharpe, Sortino, drawdown, etc.)
+│   ├── optimise.py                # Parameter optimisation and validation
 │   ├── preprocess.py              # Spread calculation and z-score preprocessing
 │   └── signals.py                 # Trading signal generation logic
-├── tests/                          # Test suite (53 tests, 100% coverage)
-│   ├── test_backtest.py           # Tests for backtest engine (14 tests)
-│   ├── test_data_utils.py         # Tests for data download functions (5 tests)
-│   ├── test_metrics.py            # Tests for performance metrics (16 tests)
-│   ├── test_preprocess.py         # Tests for spread preprocessing (11 tests)
-│   ├── test_signals.py            # Tests for signal generation (7 tests)
+├── tests/                          # Test suite (100% coverage)
+│   ├── conftest.py                # Pytest configuration
+│   ├── test_backtest.py           # Tests for backtest engine
+│   ├── test_data_utils.py         # Tests for data download functions
+│   ├── test_metrics.py            # Tests for performance metrics
+│   ├── test_optimise.py           # Tests for optimisation module
+│   ├── test_preprocess.py         # Tests for spread preprocessing
+│   ├── test_signals.py            # Tests for signal generation
 │   └── docs/                      # Test documentation
 │       ├── COVERAGE_MAP.md        # Test-to-function coverage mapping
 │       └── TEST_PLAN.md           # Detailed test specifications
@@ -175,6 +193,32 @@ This script:
 - Computes spreads and z-scores
 - Generates visualisation plots
 - Saves processed data to CSV files
+
+#### Parameter Optimisation
+
+```bash
+python experiments/run_optimise_test.py
+```
+
+This script runs grid search optimisation across multiple pairs:
+- Tests 1,200+ parameter combinations per pair
+- Displays top 5 configurations for each pair
+- Generates heatmap visualisations
+- Saves full results to CSV files
+- Provides cross-pair comparison
+
+#### Advanced Optimisation Analysis
+
+```bash
+python experiments/run_advanced_optimise.py
+```
+
+This script performs comprehensive analysis:
+- Walk-forward validation (70/30 train/test split)
+- Robustness analysis across 3 time periods
+- Transaction cost sensitivity (0-50 bps)
+- Stable parameter region identification
+- Final recommendations based on all analyses
 
 ## Testing
 

@@ -17,15 +17,16 @@ This project follows a phased development approach, building from statistical re
 - [x] Comprehensive metrics testing 
 - [x] Equity curve visualisation
 
-### Phase 3: Parameter Optimisation (In Progress)
+### Phase 3: Parameter Optimisation (Complete)
 - [x] Parameter grid search for lookback, entry_z, exit_z (`optimise.py`)
 - [x] Automated multi-pair backtesting (`run_optimise_test.py`)
 - [x] Comprehensive test suite
 - [x] Heatmap visualisations of Sharpe ratio across parameter space
-- [ ] Walk-forward validation (train/test splits)
-- [ ] Robustness analysis across time periods
-- [ ] Transaction cost sensitivity analysis
-- [ ] Identification of stable parameter regions
+- [x] Walk-forward validation (train/test splits)
+- [x] Robustness analysis across time periods
+- [x] Transaction cost sensitivity analysis
+- [x] Identification of stable parameter regions
+- [x] Advanced optimisation experiments (`run_advanced_optimise.py`)
 
 ### Phase 4: Real-Time Prototype (Planned)
 - [ ] Live data stream integration

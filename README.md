@@ -13,6 +13,11 @@ A high-performance statistical arbitrage system designed for pair-trading highly
 | **Strategy** | Extends beyond data processing to incorporate complete trading logic, from signal generation to backtesting. | Emphasises end-to-end system design and evaluation within a research-to-production workflow. |
 | **Engine** | Designed as a modular, extensible architecture capable of supporting multiple asset classes and execution layers. | Positions the project as a scalable and maintainable platform rather than a single-purpose prototype. |
 
+## Inspiration
+
+This project was inspired by [Max Margenot's excellent talk on pairs trading](https://www.youtube.com/watch?v=g-qvFjvyqcs), which provided valuable insights into statistical arbitrage strategies and their practical implementation. Special thanks to [Max Margenot](https://www.linkedin.com/in/mmargenot/) for sharing his expertise with the quantitative finance community.
+
+Also thanks to [Statistical Arbitrage for the Uninitiated (no fluff)](https://www.youtube.com/watch?v=-Fr-Nz-uO2U). 
 
 ## Project Goals
 

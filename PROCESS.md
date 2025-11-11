@@ -321,3 +321,106 @@ These metrics allow us to answer critical questions:
 - How much capital drawdown should we expect?
 - Does the strategy generate enough trades to be practical?
 - Are the wins large enough to compensate for the losses?
+
+---
+
+## Process 8 — Parameter Optimisation
+Implemented in: `/src/optimise.py`
+
+After building a working strategy, we need to find the best settings to maximise performance.  
+Think of this like tuning a radio to get the clearest signal—we're adjusting three key dials to find the optimal combination.
+
+**The problem:**
+
+Our strategy has three important settings that affect how it behaves:
+1. **Lookback window**: How many days of history to use when calculating the spread's average (30, 60, or 90 days?)
+2. **Entry threshold**: How far apart must prices be before we open a trade? (z-score of 1.5, 2.0, or 2.5?)
+3. **Exit threshold**: How close must prices return before we close the trade? (z-score of 0.25, 0.5, or 0.75?)
+
+Different settings work better for different asset pairs. Some pairs need wider thresholds to avoid false signals, while others need tighter thresholds to capture quick movements.
+
+**What we do:**
+
+We test every possible combination of these settings systematically—this is called a **grid search**.
+
+For example, if we test:
+- 3 lookback windows (30, 60, 90 days)
+- 3 entry thresholds (1.5, 2.0, 2.5)
+- 3 exit thresholds (0.25, 0.5, 0.75)
+
+That gives us 3 × 3 × 3 = 27 different combinations to evaluate.
+
+**How it works:**
+
+1. **Generate all combinations**: Create a list of every possible parameter set.
+
+2. **Run backtest for each combination**: For each set of parameters:
+   - Calculate the spread using that lookback window
+   - Generate trading signals using those entry/exit thresholds
+   - Run a backtest to measure performance
+   - Calculate all performance metrics (Sharpe ratio, returns, drawdown, etc.)
+
+3. **Apply quality filters**: Remove unreliable configurations that:
+   - Don't generate enough trades (fewer than 10)
+   - Don't have enough data after the warmup period (fewer than 200 observations)
+   - Have invalid settings (entry threshold smaller than exit threshold)
+
+4. **Rank by performance**: Sort all valid configurations by Sharpe ratio (risk-adjusted returns).  
+   The configuration with the highest Sharpe ratio becomes our optimal parameter set.
+
+5. **Analyse stability**: Look at the top 5-10 configurations to see if they use similar parameters.  
+   If the best settings are all clustered together (e.g., lookback between 45-75 days), that suggests the strategy is robust.  
+   If the top results are scattered randomly, the strategy might be unreliable.
+
+**The output:**
+
+The optimisation produces:
+- **Full results table**: Every configuration tested, sorted by performance
+- **Best configuration**: The single parameter set with highest Sharpe ratio
+- **Derived metrics**: Additional insights like return-per-trade and drawdown-to-return ratio
+- **Visualisations** (optional): Heatmaps showing how Sharpe ratio changes across the parameter space
+
+**Example output:**
+
+```
+Testing 45 parameter combinations...
+Found 38 valid configurations.
+
+TOP 5 CONFIGURATIONS FOR SPY vs QQQ:
+
+Rank 1:
+  Parameters:    lookback=60, entry_z=2.00, exit_z=0.50
+  Sharpe Ratio:      2.15
+  Total Return:      0.1250
+  Max Drawdown:     -0.0350
+  Win Rate:          58.5%
+  Num Trades:        42
+  Profit Factor:     1.85
+
+Rank 2:
+  Parameters:    lookback=75, entry_z=2.00, exit_z=0.50
+  Sharpe Ratio:      2.08
+  Total Return:      0.1180
+  ...
+```
+
+**Why this matters:**
+
+Without optimisation, we'd be guessing at the best parameters. We might choose settings that work poorly, missing profitable opportunities or taking unnecessary risks.
+
+By systematically testing all combinations, we:
+- **Maximise risk-adjusted returns**: Find the settings that give the best Sharpe ratio
+- **Understand robustness**: See if small parameter changes dramatically affect performance
+- **Avoid overfitting**: Use quality filters to ensure we have enough trades for statistical validity
+- **Compare across pairs**: Identify whether different asset pairs need different settings
+
+**Important considerations:**
+
+1. **Overfitting risk**: Just because a parameter set performed best historically doesn't guarantee future success.  
+   We look for stable regions where multiple nearby parameter sets perform well, not just a single "magic" combination.
+
+2. **Transaction costs**: More trades mean higher costs. A configuration with Sharpe ratio of 2.0 and 100 trades might be worse than Sharpe 1.9 with 30 trades once we account for fees.
+
+3. **Walk-forward validation** (future enhancement): Test parameters on one time period, then validate on a different period to ensure they generalise.
+
+This optimisation process transforms our strategy from a fixed set of rules into an adaptive system that can be tuned for different market conditions and asset pairs.

@@ -8,7 +8,7 @@ This project follows a phased development approach, building from statistical re
 - [x] Z-score normalisation (`preprocess.py`)
 - [x] Signal generation logic (`signals.py`)
 - [x] Threshold analysis experiments
-- [x] Comprehensive test suite 
+- [x] Comprehensive test suite
 
 ### Phase 2: Backtesting & Metrics (Complete)
 - [x] Test-driven backtest specification (`test_backtest.py`)
@@ -17,11 +17,14 @@ This project follows a phased development approach, building from statistical re
 - [x] Comprehensive metrics testing 
 - [x] Equity curve visualisation
 
-### Phase 3: Parameter Optimisation (Planned)
-- [ ] Parameter grid search for lookback, entry_z, exit_z
-- [ ] Automated multi-pair backtesting
-- [ ] Robustness analysis across pairs
-- [ ] Heatmap and surface plots of Sharpe / drawdown stability
+### Phase 3: Parameter Optimisation (In Progress)
+- [x] Parameter grid search for lookback, entry_z, exit_z (`optimise.py`)
+- [x] Automated multi-pair backtesting (`run_optimise_test.py`)
+- [x] Comprehensive test suite
+- [x] Heatmap visualisations of Sharpe ratio across parameter space
+- [ ] Walk-forward validation (train/test splits)
+- [ ] Robustness analysis across time periods
+- [ ] Transaction cost sensitivity analysis
 - [ ] Identification of stable parameter regions
 
 ### Phase 4: Real-Time Prototype (Planned)
